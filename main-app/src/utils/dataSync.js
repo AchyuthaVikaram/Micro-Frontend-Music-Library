@@ -68,150 +68,175 @@ class DataSyncService {
     }
   }
 
+  // Provide a reusable list of default songs
+  getDefaultSongs() {
+    return [
+      {
+        id: 1,
+        title: "Bohemian Rhapsody",
+        artist: "Queen",
+        album: "A Night at the Opera",
+        duration: "5:55",
+        year: 1975,
+        genre: "Rock"
+      },
+      {
+        id: 2,
+        title: "Hotel California",
+        artist: "Eagles",
+        album: "Hotel California",
+        duration: "6:30",
+        year: 1976,
+        genre: "Rock"
+      },
+      {
+        id: 3,
+        title: "Imagine",
+        artist: "John Lennon",
+        album: "Imagine",
+        duration: "3:07",
+        year: 1971,
+        genre: "Pop"
+      },
+      {
+        id: 4,
+        title: "Billie Jean",
+        artist: "Michael Jackson",
+        album: "Thriller",
+        duration: "4:54",
+        year: 1982,
+        genre: "Pop"
+      },
+      {
+        id: 5,
+        title: "Stairway to Heaven",
+        artist: "Led Zeppelin",
+        album: "Led Zeppelin IV",
+        duration: "8:02",
+        year: 1971,
+        genre: "Rock"
+      },
+      {
+        id: 6,
+        title: "Sweet Child O' Mine",
+        artist: "Guns N' Roses",
+        album: "Appetite for Destruction",
+        duration: "5:03",
+        year: 1987,
+        genre: "Rock"
+      },
+      {
+        id: 7,
+        title: "Smells Like Teen Spirit",
+        artist: "Nirvana",
+        album: "Nevermind",
+        duration: "5:01",
+        year: 1991,
+        genre: "Grunge"
+      },
+      {
+        id: 8,
+        title: "Like a Rolling Stone",
+        artist: "Bob Dylan",
+        album: "Highway 61 Revisited",
+        duration: "6:13",
+        year: 1965,
+        genre: "Folk Rock"
+      },
+      {
+        id: 9,
+        title: "Purple Haze",
+        artist: "Jimi Hendrix",
+        album: "Are You Experienced",
+        duration: "2:50",
+        year: 1967,
+        genre: "Rock"
+      },
+      {
+        id: 10,
+        title: "What's Going On",
+        artist: "Marvin Gaye",
+        album: "What's Going On",
+        duration: "3:53",
+        year: 1971,
+        genre: "Soul"
+      },
+      {
+        id: 11,
+        title: "Thriller",
+        artist: "Michael Jackson",
+        album: "Thriller",
+        duration: "5:57",
+        year: 1982,
+        genre: "Pop"
+      },
+      {
+        id: 12,
+        title: "Comfortably Numb",
+        artist: "Pink Floyd",
+        album: "The Wall",
+        duration: "6:23",
+        year: 1979,
+        genre: "Progressive Rock"
+      },
+      {
+        id: 13,
+        title: "Yesterday",
+        artist: "The Beatles",
+        album: "Help!",
+        duration: "2:05",
+        year: 1965,
+        genre: "Pop"
+      },
+      {
+        id: 14,
+        title: "Good Vibrations",
+        artist: "The Beach Boys",
+        album: "Smiley Smile",
+        duration: "3:39",
+        year: 1966,
+        genre: "Pop"
+      },
+      {
+        id: 15,
+        title: "Respect",
+        artist: "Aretha Franklin",
+        album: "I Never Loved a Man the Way I Love You",
+        duration: "2:28",
+        year: 1967,
+        genre: "Soul"
+      }
+    ];
+  }
+
   // Initialize with default data if localStorage is empty
   initializeDefaultData() {
-    const storedData = localStorage.getItem(this.storageKey);
-    if (!storedData) {
-      const defaultSongs = [
-        {
-          id: 1,
-          title: "Bohemian Rhapsody",
-          artist: "Queen",
-          album: "A Night at the Opera",
-          duration: "5:55",
-          year: 1975,
-          genre: "Rock"
-        },
-        {
-          id: 2,
-          title: "Hotel California",
-          artist: "Eagles",
-          album: "Hotel California",
-          duration: "6:30",
-          year: 1976,
-          genre: "Rock"
-        },
-        {
-          id: 3,
-          title: "Imagine",
-          artist: "John Lennon",
-          album: "Imagine",
-          duration: "3:07",
-          year: 1971,
-          genre: "Pop"
-        },
-        {
-          id: 4,
-          title: "Billie Jean",
-          artist: "Michael Jackson",
-          album: "Thriller",
-          duration: "4:54",
-          year: 1982,
-          genre: "Pop"
-        },
-        {
-          id: 5,
-          title: "Stairway to Heaven",
-          artist: "Led Zeppelin",
-          album: "Led Zeppelin IV",
-          duration: "8:02",
-          year: 1971,
-          genre: "Rock"
-        },
-        {
-          id: 6,
-          title: "Sweet Child O' Mine",
-          artist: "Guns N' Roses",
-          album: "Appetite for Destruction",
-          duration: "5:03",
-          year: 1987,
-          genre: "Rock"
-        },
-        {
-          id: 7,
-          title: "Smells Like Teen Spirit",
-          artist: "Nirvana",
-          album: "Nevermind",
-          duration: "5:01",
-          year: 1991,
-          genre: "Grunge"
-        },
-        {
-          id: 8,
-          title: "Like a Rolling Stone",
-          artist: "Bob Dylan",
-          album: "Highway 61 Revisited",
-          duration: "6:13",
-          year: 1965,
-          genre: "Folk Rock"
-        },
-        {
-          id: 9,
-          title: "Purple Haze",
-          artist: "Jimi Hendrix",
-          album: "Are You Experienced",
-          duration: "2:50",
-          year: 1967,
-          genre: "Rock"
-        },
-        {
-          id: 10,
-          title: "What's Going On",
-          artist: "Marvin Gaye",
-          album: "What's Going On",
-          duration: "3:53",
-          year: 1971,
-          genre: "Soul"
-        },
-        {
-          id: 11,
-          title: "Thriller",
-          artist: "Michael Jackson",
-          album: "Thriller",
-          duration: "5:57",
-          year: 1982,
-          genre: "Pop"
-        },
-        {
-          id: 12,
-          title: "Comfortably Numb",
-          artist: "Pink Floyd",
-          album: "The Wall",
-          duration: "6:23",
-          year: 1979,
-          genre: "Progressive Rock"
-        },
-        {
-          id: 13,
-          title: "Yesterday",
-          artist: "The Beatles",
-          album: "Help!",
-          duration: "2:05",
-          year: 1965,
-          genre: "Pop"
-        },
-        {
-          id: 14,
-          title: "Good Vibrations",
-          artist: "The Beach Boys",
-          album: "Smiley Smile",
-          duration: "3:39",
-          year: 1966,
-          genre: "Pop"
-        },
-        {
-          id: 15,
-          title: "Respect",
-          artist: "Aretha Franklin",
-          album: "I Never Loved a Man the Way I Love You",
-          duration: "2:28",
-          year: 1967,
-          genre: "Soul"
+    try {
+      const storedData = localStorage.getItem(this.storageKey);
+      let needsSeed = false;
+      if (!storedData) {
+        needsSeed = true;
+      } else {
+        try {
+          const parsed = JSON.parse(storedData);
+          if (Array.isArray(parsed) && parsed.length === 0) {
+            needsSeed = true;
+          }
+        } catch (_) {
+          // Corrupted data, reseed
+          needsSeed = true;
         }
-      ];
-      
-      this.setData(defaultSongs);
-      console.log('🎯 Initialized with 15 default songs');
+      }
+
+      if (needsSeed) {
+        const defaultSongs = this.getDefaultSongs();
+        this.setData(defaultSongs);
+        console.log('🎯 Initialized with 15 default songs');
+      }
+    } catch (error) {
+      console.warn('⚠️ initializeDefaultData failed; attempting to seed defaults.', error);
+      const fallback = this.getDefaultSongs();
+      this.setData(fallback);
     }
   }
 

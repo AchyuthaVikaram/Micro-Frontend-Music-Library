@@ -51,17 +51,15 @@ export const SongsProvider = ({ children }) => {
 
   // Memoize the callback functions to prevent unnecessary re-renders
   const addSong = useCallback((newSong) => {
-    const song = {
-      ...newSong,
-      id: Math.max(...songs.map(s => s.id), 0) + 1,
-      year: newSong.year ? parseInt(newSong.year) : null
-    };
-    setSongs(prevSongs => [...prevSongs, song]);
+    // Persist via shared dataSyncService so it hits localStorage and notifies listeners
+    const persisted = dataSyncService.addSong(newSong);
+    // Optimistically update local state (subscription will also update)
+    setSongs(prev => [...prev, persisted]);
     try {
-      push({ title: 'Song added', description: `${song.title} by ${song.artist}`, variant: 'success' });
+      push({ title: 'Song added', description: `${persisted.title} by ${persisted.artist}`, variant: 'success' });
     } catch {}
-    return song;
-  }, [songs, push]);
+    return persisted;
+  }, [push]);
 
   // Define getSongById BEFORE other callbacks that reference it
   const getSongById = useCallback((songId) => {
