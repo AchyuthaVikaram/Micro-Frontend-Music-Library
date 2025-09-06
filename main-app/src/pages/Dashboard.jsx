@@ -172,24 +172,27 @@ const Dashboard = () => {
         </div>
 
         {/* Music Library Component */}
-        <div className="rounded-2xl border border-gray-800 bg-gray-800/50 backdrop-blur-sm p-4 md:p-6">
-          <Suspense
-            fallback={
-              <div className="flex flex-col items-center justify-center p-10 md:p-12 text-center">
-                <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-500/30 border-t-blue-500" />
-                <p className="mb-1 text-gray-300">Loading Music Library...</p>
-                <p className="text-xs text-gray-500">Connecting to micro frontend on port 5174</p>
-              </div>
-            }
-          >
-            <MusicLibrary
-              songs={songs}
-              role={user?.role}
-              onAddSong={handleAddSong}
-              onDeleteSong={handleDeleteSong}
-            />
-          </Suspense>
-        </div>
+        <Suspense
+          fallback={
+            <div className="flex flex-col items-center justify-center p-10 md:p-12 text-center">
+              <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-500/30 border-t-blue-500" />
+              <p className="mb-1 text-gray-300">Loading Music Library...</p>
+              <p className="text-xs text-gray-500">Connecting to micro frontend on port 5174</p>
+            </div>
+          }
+        >
+          {/* Center the library and allow it to use full width on mobile */}
+          <div className="w-full flex justify-center">
+            <div className="w-full max-w-none md:max-w-7xl mx-auto px-1 sm:px-3">
+              <MusicLibrary
+                songs={songs}
+                role={user?.role}
+                onAddSong={handleAddSong}
+                onDeleteSong={handleDeleteSong}
+              />
+            </div>
+          </div>
+        </Suspense>
       </motion.div>
     </div>
   );
