@@ -1,6 +1,6 @@
 // Central place to configure remote Music Library base URL for main-app
-// Update this after deployment to point to your production music-library origin
-export const BASE_URL = 'http://localhost:5174';
+// Driven by env for easy deploys; falls back to localhost for dev
+export const BASE_URL = import.meta.env.VITE_MUSIC_LIBRARY_URL || 'http://localhost:5174';
 
 export default {
   BASE_URL,
