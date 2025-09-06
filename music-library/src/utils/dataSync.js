@@ -1,6 +1,8 @@
 // Shared data synchronization service for micro frontends
 // This ensures data consistency between main-app and music-library
 
+import { BASE_URL } from './constants';
+
 class DataSyncService {
   constructor() {
     this.storageKey = 'musicLibrarySongs';
@@ -10,9 +12,12 @@ class DataSyncService {
     this.retryCount = 0;
     this.maxRetries = 3;
 
-    // Cross-origin bridge (to main-app on 5173)
-    this.bridgeUrl = 'http://localhost:5173/bridge.html';
-    this.bridgeOrigin = 'http://localhost:5173';
+    // Cross-origin bridge to main-app (origin derived from BASE_URL)
+    // Pass current origin as "allowed" query so bridge can authorize dynamically
+    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
+    const allowedParam = currentOrigin ? `?allowed=${encodeURIComponent(currentOrigin)}` : '';
+    this.bridgeUrl = `${BASE_URL}/bridge.html${allowedParam}`;
+    this.bridgeOrigin = BASE_URL;
     this.bridgeWindow = null;
     this.bridgeReady = false;
     this.pendingRequests = new Map(); // requestId -> { resolve, reject, timer }

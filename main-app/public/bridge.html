@@ -13,6 +13,17 @@
           'http://127.0.0.1:5174'
         ];
 
+        // Accept an additional allowed origin from query string: ?allowed=<origin>
+        try {
+          const params = new URLSearchParams(window.location.search);
+          const allowed = params.get('allowed');
+          if (allowed && !ALLOWED_ORIGINS.includes(allowed)) {
+            ALLOWED_ORIGINS.push(allowed);
+          }
+        } catch (e) {
+          // ignore
+        }
+
         function isAllowed(origin) {
           return ALLOWED_ORIGINS.includes(origin);
         }

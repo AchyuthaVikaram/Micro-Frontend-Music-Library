@@ -1,0 +1,53 @@
+# Node
+node_modules/
+**/node_modules/
+
+# Build outputs
+build/
+dist/
+**/build/
+**/dist/
+
+# Vite / Next / Misc cache
+.vite/
+.next/
+.turbo/
+.cache/
+.tmp/
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+*.log
+logs/
+
+# Env files (keep secrets out of Git)
+.env
+**/.env
+
+# Local OS files
+.DS_Store
+Thumbs.db
+
+# Coverage
+coverage/
+**/coverage/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Deployment providers
+.vercel/
+.netlify/
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Lockfiles (optional – uncomment if you want to ignore lockfiles)
+# package-lock.json
+# yarn.lock
+# pnpm-lock.yaml

@@ -4,6 +4,7 @@ import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, Music, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { BASE_URL as MUSIC_LIBRARY_BASE_URL } from '../utils/constants';
 import { useSongs } from '../context/SongsContext';
 
 // Enhanced lazy loading with retry mechanism
@@ -50,10 +51,11 @@ const Dashboard = () => {
     // Check if remote is accessible
     const checkRemote = async () => {
       try {
-        // Try both possible paths for remoteEntry.js
+        // Try both possible paths for remoteEntry.js on the configured music-library base URL
+        const base = MUSIC_LIBRARY_BASE_URL?.replace(/\/$/, '');
         const paths = [
-          'http://localhost:5174/assets/remoteEntry.js',
-          'http://localhost:5174/remoteEntry.js'
+          `${base}/assets/remoteEntry.js`,
+          `${base}/remoteEntry.js`
         ];
         
         let found = false;
@@ -75,7 +77,7 @@ const Dashboard = () => {
           console.warn('⚠️ Remote entry not accessible at any expected path');
           // Try to check if the server is running at all
           try {
-            const serverResponse = await fetch('http://localhost:5174');
+            const serverResponse = await fetch(base);
             if (serverResponse.ok) {
               console.log('✅ Music library server is running, but remoteEntry.js not found');
             }
