@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
+import { SongsProvider } from './context/SongsContext';
 import Protected from './components/Protected';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
 import Login from './pages/Login';
 import Home from './pages/Home';
 import Dashboard from './pages/Dashboard';
+import Settings from './pages/Settings';
 import { useAuth } from './context/AuthContext';
 
 // Layout component for authenticated pages
@@ -67,6 +69,16 @@ const AppContent = () => {
           </Protected>
         }
       />
+      <Route
+        path="/settings"
+        element={
+          <Protected>
+            <AppLayout>
+              <Settings />
+            </AppLayout>
+          </Protected>
+        }
+      />
       
       {/* Redirect unknown routes to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
@@ -78,7 +90,9 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <AppContent />
+        <SongsProvider>
+          <AppContent />
+        </SongsProvider>
       </AuthProvider>
     </Router>
   );

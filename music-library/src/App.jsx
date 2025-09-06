@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FilterBar from './components/FilterBar';
 import SongCard from './components/SongCard';
@@ -181,7 +181,7 @@ const AddSongModal = ({ isOpen, onClose, onAddSong }) => {
 
 // Main MusicLibrary Component
 const MusicLibrary = ({ 
-  songs = [], 
+  songs: propsSongs = [], 
   role = 'user', 
   onAddSong, 
   onDeleteSong 
@@ -191,43 +191,84 @@ const MusicLibrary = ({
   const [groupBy, setGroupBy] = useState('album');
   const [isGrouped, setIsGrouped] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
-
-  // Default songs for when no songs are provided (fallback)
-  const defaultSongs = [
-    {
-      id: 1,
-      title: "Bohemian Rhapsody",
-      artist: "Queen",
-      album: "A Night at the Opera",
-      duration: "5:55",
-      year: 1975,
-      genre: "Rock"
-    },
-    {
-      id: 2,
-      title: "Hotel California",
-      artist: "Eagles",
-      album: "Hotel California",
-      duration: "6:30",
-      year: 1976,
-      genre: "Rock"
-    },
-    {
-      id: 3,
-      title: "Imagine",
-      artist: "John Lennon",
-      album: "Imagine",
-      duration: "3:07",
-      year: 1971,
-      genre: "Pop"
+  
+  // Shared state management using localStorage
+  const [songs, setSongs] = useState(() => {
+    const storedSongs = localStorage.getItem('musicLibrarySongs');
+    if (storedSongs) {
+      try {
+        const parsed = JSON.parse(storedSongs);
+        console.log('🎵 Loaded songs from localStorage:', parsed.length);
+        return parsed;
+      } catch (error) {
+        console.error('Error parsing localStorage songs:', error);
+        return propsSongs.length > 0 ? propsSongs : [];
+      }
     }
-  ];
+    // Initialize with props if available, otherwise empty array
+    console.log('🎵 No localStorage songs, using props:', propsSongs.length);
+    return propsSongs.length > 0 ? propsSongs : [];
+  });
 
-  const songsToUse = songs.length > 0 ? songs : defaultSongs;
+  // Initialize localStorage if empty and we have songs
+  useEffect(() => {
+    const storedSongs = localStorage.getItem('musicLibrarySongs');
+    if (!storedSongs && songs.length === 0 && propsSongs.length > 0) {
+      console.log('🎵 Initializing localStorage with props songs');
+      setSongs(propsSongs);
+    }
+  }, [propsSongs]);
+
+  // Sync with localStorage and listen for changes from other windows/tabs
+  useEffect(() => {
+    // Save to localStorage whenever songs change
+    localStorage.setItem('musicLibrarySongs', JSON.stringify(songs));
+
+    // Dispatch custom event to notify other instances
+    window.dispatchEvent(new CustomEvent('songsUpdated', { detail: songs }));
+  }, [songs]);
+
+  // Listen for localStorage changes from other windows/tabs
+  useEffect(() => {
+    const handleStorageChange = (e) => {
+      if (e.key === 'musicLibrarySongs' && e.newValue) {
+        setSongs(JSON.parse(e.newValue));
+      }
+    };
+
+    const handleCustomSongsUpdate = (e) => {
+      setSongs(e.detail);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('songsUpdated', handleCustomSongsUpdate);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('songsUpdated', handleCustomSongsUpdate);
+    };
+  }, []);
+
+  // Sync with props when they change (for micro frontend integration)
+  useEffect(() => {
+    if (propsSongs && propsSongs.length > 0) {
+      setSongs(propsSongs);
+    }
+  }, [propsSongs]);
+
+  // Debug logging
+  console.log('🎵 MusicLibrary state:', {
+    songsCount: songs.length,
+    propsSongsCount: propsSongs?.length || 0,
+    role,
+    hasOnAddSong: !!onAddSong,
+    hasOnDeleteSong: !!onDeleteSong,
+    firstSong: songs[0]?.title || 'No songs'
+  });
 
   // Process songs with filter, sort, and group
   const processedSongs = useMemo(() => {
-    let filtered = filterSongsByQuery(songsToUse, searchQuery);
+    let filtered = filterSongsByQuery(songs, searchQuery);
     let sorted = sortSongs(filtered, sortBy);
     
     if (isGrouped) {
@@ -235,16 +276,18 @@ const MusicLibrary = ({
     }
     
     return sorted;
-  }, [songsToUse, searchQuery, sortBy, groupBy, isGrouped]);
+  }, [songs, searchQuery, sortBy, groupBy, isGrouped]);
 
   const handleAddSong = (songData) => {
     if (onAddSong) {
+      setSongs([...songs, songData]);
       onAddSong(songData);
     }
   };
 
   const handleDeleteSong = (songId) => {
     if (onDeleteSong) {
+      setSongs(songs.filter(song => song.id !== songId));
       onDeleteSong(songId);
     }
   };
@@ -275,7 +318,7 @@ const MusicLibrary = ({
             Music Library
           </h1>
           <p className="text-gray-400">
-            {songsToUse.length} songs • {role === 'admin' ? 'Admin Access' : 'User Access'}
+            {songs.length} songs • {role === 'admin' ? 'Admin Access' : 'User Access'}
           </p>
         </motion.div>
 

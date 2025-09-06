@@ -4,6 +4,7 @@ import React, { lazy, Suspense, useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { AlertCircle, Music, RefreshCw } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useSongs } from '../context/SongsContext';
 
 // Enhanced lazy loading with retry mechanism
 const MusicLibrary = lazy(() => 
@@ -42,144 +43,7 @@ const MusicLibrary = lazy(() =>
 
 const Dashboard = () => {
   const { user, isAdmin } = useAuth();
-  const [songs, setSongs] = useState([
-    {
-      id: 1,
-      title: "Bohemian Rhapsody",
-      artist: "Queen",
-      album: "A Night at the Opera",
-      duration: "5:55",
-      year: 1975,
-      genre: "Rock"
-    },
-    {
-      id: 2,
-      title: "Hotel California",
-      artist: "Eagles",
-      album: "Hotel California",
-      duration: "6:30",
-      year: 1976,
-      genre: "Rock"
-    },
-    {
-      id: 3,
-      title: "Imagine",
-      artist: "John Lennon",
-      album: "Imagine",
-      duration: "3:07",
-      year: 1971,
-      genre: "Pop"
-    },
-    {
-      id: 4,
-      title: "Billie Jean",
-      artist: "Michael Jackson",
-      album: "Thriller",
-      duration: "4:54",
-      year: 1982,
-      genre: "Pop"
-    },
-    {
-      id: 5,
-      title: "Stairway to Heaven",
-      artist: "Led Zeppelin",
-      album: "Led Zeppelin IV",
-      duration: "8:02",
-      year: 1971,
-      genre: "Rock"
-    },
-    {
-      id: 6,
-      title: "Sweet Child O' Mine",
-      artist: "Guns N' Roses",
-      album: "Appetite for Destruction",
-      duration: "5:03",
-      year: 1987,
-      genre: "Rock"
-    },
-    {
-      id: 7,
-      title: "Smells Like Teen Spirit",
-      artist: "Nirvana",
-      album: "Nevermind",
-      duration: "5:01",
-      year: 1991,
-      genre: "Grunge"
-    },
-    {
-      id: 8,
-      title: "Like a Rolling Stone",
-      artist: "Bob Dylan",
-      album: "Highway 61 Revisited",
-      duration: "6:13",
-      year: 1965,
-      genre: "Folk Rock"
-    },
-    {
-      id: 9,
-      title: "Purple Haze",
-      artist: "Jimi Hendrix",
-      album: "Are You Experienced",
-      duration: "2:50",
-      year: 1967,
-      genre: "Rock"
-    },
-    {
-      id: 10,
-      title: "What's Going On",
-      artist: "Marvin Gaye",
-      album: "What's Going On",
-      duration: "3:53",
-      year: 1971,
-      genre: "Soul"
-    },
-    {
-      id: 11,
-      title: "Good Vibrations",
-      artist: "The Beach Boys",
-      album: "Smiley Smile",
-      duration: "3:39",
-      year: 1966,
-      genre: "Pop"
-    },
-    {
-      id: 12,
-      title: "Johnny B. Goode",
-      artist: "Chuck Berry",
-      album: "Chuck Berry Is on Top",
-      duration: "2:38",
-      year: 1958,
-      genre: "Rock and Roll"
-    },
-    {
-      id: 13,
-      title: "Respect",
-      artist: "Aretha Franklin",
-      album: "I Never Loved a Man the Way I Love You",
-      duration: "2:28",
-      year: 1967,
-      genre: "Soul"
-    },
-    {
-      id: 14,
-      title: "Hey Jude",
-      artist: "The Beatles",
-      album: "Hey Jude",
-      duration: "7:11",
-      year: 1968,
-      genre: "Pop"
-    },
-    {
-      id: 15,
-      title: "Satisfaction",
-      artist: "The Rolling Stones",
-      album: "Out of Our Heads",
-      duration: "3:44",
-      year: 1965,
-      genre: "Rock"
-    }
-  ]);
-
+  const { songs, addSong, deleteSong } = useSongs();
   const [remoteLoaded, setRemoteLoaded] = useState(false);
 
   useEffect(() => {
@@ -229,64 +93,79 @@ const Dashboard = () => {
 
   const handleAddSong = (newSong) => {
     if (!isAdmin()) return;
-    
-    const song = {
-      ...newSong,
-      id: Math.max(...songs.map(s => s.id)) + 1
-    };
-    setSongs(prevSongs => [...prevSongs, song]);
+    return addSong(newSong);
   };
 
   const handleDeleteSong = (songId) => {
     if (!isAdmin()) return;
-    
-    setSongs(prevSongs => prevSongs.filter(song => song.id !== songId));
+    deleteSong(songId);
   };
 
-  return (
-    <div className="min-h-screen bg-gray-900">
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="bg-gray-800/50 border-b border-gray-700 px-6 py-4"
-      >
-        <div className="flex items-center gap-3">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-lg">
-            <Music className="w-6 h-6 text-white" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-white">Music Dashboard</h1>
-            <p className="text-gray-400 text-sm">
-              Manage your music collection • {songs.length} songs total
-            </p>
-          </div>
-        </div>
-      </motion.div>
+  // Debug logging for songs data
+  console.log('🎯 Dashboard songs data:', {
+    songsCount: songs.length,
+    firstFewSongs: songs.slice(0, 3).map(s => ({ id: s.id, title: s.title, artist: s.artist })),
+    userRole: user?.role
+  });
 
-      {/* Music Library Micro Frontend */}
+  return (
+    <div className="min-h-screen bg-gray-900 p-6">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="p-6"
+        className="max-w-7xl mx-auto"
       >
-        <Suspense 
-          fallback={
-            <div className="flex flex-col items-center justify-center p-12 text-center">
-              <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4" />
-              <p className="text-gray-400 mb-2">Loading Music Library...</p>
-              <p className="text-sm text-gray-500">Connecting to micro frontend on port 5174</p>
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-3 rounded-xl">
+              <Music className="w-8 h-8 text-white" />
             </div>
-          }
-        >
-          <MusicLibrary
-            songs={songs}
-            role={user?.role}
-            onAddSong={isAdmin() ? handleAddSong : undefined}
-            onDeleteSong={isAdmin() ? handleDeleteSong : undefined}
-          />
-        </Suspense>
+            <div>
+              <h1 className="text-3xl font-bold text-white">Music Library Dashboard</h1>
+              <p className="text-gray-400">
+                Welcome back, <span className="text-blue-400">{user?.name}</span>! 
+                You're logged in as <span className="capitalize text-purple-400">{user?.role}</span>
+              </p>
+            </div>
+          </div>
+
+          {/* Connection Status */}
+          <div className="flex items-center gap-4 text-sm">
+            <div className="flex items-center gap-2">
+              <div className={`w-2 h-2 rounded-full ${remoteLoaded ? 'bg-green-400' : 'bg-red-400'}`} />
+              <span className="text-gray-400">
+                Remote Status: {remoteLoaded ? 'Connected' : 'Checking...'}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-blue-400" />
+              <span className="text-gray-400">
+                Songs: {songs.length} tracks loaded
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Music Library Component */}
+        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6">
+          <Suspense 
+            fallback={
+              <div className="flex flex-col items-center justify-center p-12 text-center">
+                <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4" />
+                <p className="text-gray-400 mb-2">Loading Music Library...</p>
+                <p className="text-sm text-gray-500">Connecting to micro frontend on port 5174</p>
+              </div>
+            }
+          >
+            <MusicLibrary
+              songs={songs}
+              role={user?.role}
+              onAddSong={handleAddSong}
+              onDeleteSong={handleDeleteSong}
+            />
+          </Suspense>
+        </div>
       </motion.div>
     </div>
   );

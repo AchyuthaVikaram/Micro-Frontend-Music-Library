@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Link, useLocation } from 'react-router-dom';
 import { 
   Home, 
   Music, 
@@ -16,6 +17,7 @@ import { useAuth } from '../context/AuthContext';
 
 const Sidebar = ({ isOpen, onToggle }) => {
   const { user, isAdmin } = useAuth();
+  const location = useLocation();
 
   const menuItems = [
     {
@@ -125,7 +127,7 @@ const Sidebar = ({ isOpen, onToggle }) => {
         <div className="space-y-2">
           {filteredMenuItems.map((item, index) => {
             const Icon = item.icon;
-            const isActive = window.location.pathname === item.path;
+            const isActive = location.pathname === item.path;
             
             return (
               <motion.div
@@ -134,31 +136,32 @@ const Sidebar = ({ isOpen, onToggle }) => {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: index * 0.1 }}
               >
-                <motion.a
-                  href={item.path}
-                  whileHover={{ x: 4 }}
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
-                    isActive 
-                      ? 'bg-blue-600/20 text-blue-200 border border-blue-500/30' 
-                      : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
-                  } ${!isOpen ? 'justify-center' : ''}`}
-                  title={!isOpen ? item.label : ''}
-                >
-                  <Icon className="w-5 h-5 flex-shrink-0" />
-                  <AnimatePresence>
-                    {isOpen && (
-                      <motion.span
-                        variants={itemVariants}
-                        initial="closed"
-                        animate="open"
-                        exit="closed"
-                        className="font-medium"
-                      >
-                        {item.label}
-                      </motion.span>
-                    )}
-                  </AnimatePresence>
-                </motion.a>
+                <Link to={item.path}>
+                  <motion.div
+                    whileHover={{ x: 4 }}
+                    className={`flex items-center gap-3 px-3 py-2 rounded-lg transition-colors ${
+                      isActive 
+                        ? 'bg-blue-600/20 text-blue-200 border border-blue-500/30' 
+                        : 'text-gray-300 hover:bg-gray-700/50 hover:text-white'
+                    } ${!isOpen ? 'justify-center' : ''}`}
+                    title={!isOpen ? item.label : ''}
+                  >
+                    <Icon className="w-5 h-5 flex-shrink-0" />
+                    <AnimatePresence>
+                      {isOpen && (
+                        <motion.span
+                          variants={itemVariants}
+                          initial="closed"
+                          animate="open"
+                          exit="closed"
+                          className="font-medium"
+                        >
+                          {item.label}
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.div>
+                </Link>
               </motion.div>
             );
           })}
