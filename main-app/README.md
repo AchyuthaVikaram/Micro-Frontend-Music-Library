@@ -1,6 +1,6 @@
-# Music Library Main App
+# Music Library – Main App (Container)
 
-A modern React application serving as the container for a micro frontend architecture. This app provides authentication, role-based access control, and integrates the Music Library remote component via Module Federation.
+A modern React application that serves as the container in a micro frontend architecture. It provides authentication, role-based access control, and integrates the Music Library remote component via Module Federation.
 
 ## 🚀 Features
 
@@ -21,56 +21,58 @@ A modern React application serving as the container for a micro frontend archite
 - **Module Federation** - Micro frontend architecture
 - **Lucide React** - Modern icon library
 
-## 📦 Installation
+## 📦 How to Run Locally (Full Setup)
 
-1. **Clone the repository and navigate to main-app:**
+1. **Clone the repository**
    ```bash
-   cd main-app
+   git clone <your-repo-url>
+   cd Assignment
    ```
 
-2. **Install dependencies:**
+2. **Install dependencies for BOTH apps**
    ```bash
-   npm install
+   # Terminal A
+   cd music-library && npm install
+
+   # Terminal B
+   cd main-app && npm install
    ```
 
-3. **Set up environment variables (optional):**
+3. **Start dev servers (start remote first)**
    ```bash
-   # Create .env file for production deployment
-   VITE_MUSIC_LIB_REMOTE=https://your-music-library-app.vercel.app/assets/remoteEntry.js
+   # Terminal A (Remote – music-library)
+   npm run dev    # http://localhost:5174
+
+   # Terminal B (Host – main-app)
+   npm run dev    # http://localhost:5173
    ```
 
-## 🏃‍♂️ Development
+4. **Open the container** at `http://localhost:5173` and log in using demo credentials below.
 
-**Start the development server:**
-```bash
-npm run dev
-```
+## 🏃‍♂️ Development Scripts (Main App)
 
-The app will be available at `http://localhost:5173`
+- **Dev:** `npm run dev` → `http://localhost:5173`
+- **Build:** `npm run build` → outputs to `dist/`
+- **Preview:** `npm run preview` (serve the production build locally)
 
-**Build for production:**
-```bash
-npm run build
-```
+## 🔐 Demo Credentials & Role-Based Auth
 
-**Preview production build:**
-```bash
-npm run preview
-```
-
-## 🔐 Authentication
-
-The app includes a mock authentication system with the following test accounts:
+The app includes a mock authentication system (Context + localStorage). Use these:
 
 ### Admin Account
-- **Username:** `admin`
+- **Email/Username:** `admin@test.com`
 - **Password:** `admin123`
 - **Permissions:** Full access, can add/delete songs
 
 ### User Account
-- **Username:** `user`
+- **Email/Username:** `user@test.com`
 - **Password:** `user123`
 - **Permissions:** View and filter songs only
+
+Implementation (high level):
+- `src/context/AuthContext.jsx` holds auth state, `login/logout`, and `isAdmin()` helper.
+- Credentials are validated against a small mock database; a mock JWT is stored in `localStorage`.
+- `src/components/Protected.jsx` guards routes based on `user` and `user.role`.
 
 ## 🏗️ Project Structure
 
@@ -110,38 +112,47 @@ The app uses a carefully crafted dark theme with a music-inspired color palette:
 - **Dark Theme:** Various shades of dark gray/blue
 - **Typography:** Modern, readable fonts with proper hierarchy
 
-## 🔧 Module Federation Configuration
+## 🔧 Micro Frontend: Module Federation Configuration
 
-The app is configured as a Module Federation host that consumes the Music Library remote:
+This app is the host that consumes the `music-library` remote.
 
 ```javascript
 // vite.config.js
 federation({
-  name: 'main-app',
+  name: 'mainApp',
   remotes: {
-    'music-library': process.env.VITE_MUSIC_LIB_REMOTE || 
-                    'http://localhost:5174/assets/remoteEntry.js'
-  }
+    'music-library': process.env.VITE_MUSIC_LIB_REMOTE || 'http://localhost:5174/assets/remoteEntry.js'
+  },
+  shared: ['react', 'react-dom']
 })
 ```
 
-## 🚀 Deployment
+How it works end-to-end:
+- `music-library/vite.config.js` exposes `./MusicLibrary` which points to `src/App.jsx`.
+- `main-app/src/pages/Dashboard.jsx` lazy-loads `import('music-library/MusicLibrary')`.
+- Props passed from host to remote:
+  - `songs` from `src/context/SongsContext.jsx`
+  - `role` from `src/context/AuthContext.jsx`
+  - `onAddSong` / `onDeleteSong` callbacks
+- Remote renders UI only; all mutations call back into host via callbacks.
 
-### Vercel Deployment
+## 🚀 How We Deployed It
+
+### Vercel – Main App (Host)
 
 1. **Push your code to GitHub**
 
 2. **Connect to Vercel:**
    - Import your repository in Vercel
    - Set the root directory to `main-app`
-   - Add environment variable: `VITE_MUSIC_LIB_REMOTE` with your music-library app URL
+   - Add env var: `VITE_MUSIC_LIB_REMOTE` pointing to your deployed music-library `remoteEntry.js` (e.g., `https://your-remote.vercel.app/assets/remoteEntry.js`)
 
 3. **Deploy:**
    - Vercel will automatically build and deploy your app
    - The build command is: `npm run build`
    - The output directory is: `dist`
 
-### Netlify Deployment
+### Netlify – Main App (Host)
 
 1. **Build the app:**
    ```bash
@@ -154,14 +165,9 @@ federation({
    - Set build command: `npm run build`
    - Set publish directory: `dist`
 
-## 🔗 Integration with Music Library
+## 🔗 Integration with Music Library (Code Snippet)
 
-The main app integrates with the music-library micro frontend by:
-
-1. **Lazy Loading:** The MusicLibrary component is loaded dynamically
-2. **Props Interface:** Passes songs data, user role, and callback functions
-3. **State Management:** Manages the songs state and provides add/delete functionality
-4. **Error Handling:** Shows loading states and error boundaries
+The host lazy-loads the remote and passes data + callbacks:
 
 ```jsx
 // Dashboard.jsx - Integration example
@@ -177,7 +183,7 @@ const MusicLibrary = lazy(() => import('music-library/MusicLibrary'));
 </Suspense>
 ```
 
-## 🧪 Testing the Integration
+## 🧪 Testing the Integration (Local)
 
 1. **Start both applications:**
    ```bash
@@ -196,13 +202,14 @@ const MusicLibrary = lazy(() => import('music-library/MusicLibrary'));
 
 ### Module Federation Issues
 - Ensure both apps are running on different ports
-- Check that the remote URL is correct in vite.config.js
-- Verify the music-library app is exposing the MusicLibrary component
+- Check that the remote URL is correct in `main-app/vite.config.js`
+- Verify `music-library/vite.config.js` exposes `./MusicLibrary`
+- If Vite overlay shows “failed to resolve import `music-library/MusicLibrary`”, verify the remote `name` is `music-library` and the host `remotes` key matches.
 
 ### Authentication Issues
-- Check localStorage for stored JWT tokens
-- Verify the mock user database in authHelpers.js
-- Ensure proper role checking in Protected components
+- Check `localStorage` for stored JWT tokens
+- Verify the mock user database in `src/utils/authHelpers.js`
+- Ensure proper role checking in `src/components/Protected.jsx`
 
 ### Styling Issues
 - Verify Tailwind CSS is properly configured
@@ -220,8 +227,8 @@ This is an assignment project. For any issues or improvements, please contact th
 ---
 
 **Demo Credentials:**
-- Admin: `admin` / `admin123`
-- User: `user` / `user123`
+- Admin: `admin@test.com` / `admin123`
+- User: `user@test.com` / `user123`
 
 **Live Demo:** [Your deployed main-app URL]
 **Music Library Remote:** [Your deployed music-library URL]

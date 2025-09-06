@@ -1,4 +1,4 @@
-# Music Library Remote Component
+# Music Library – Remote Component (Micro Frontend)
 
 A React micro frontend component that provides a complete music library interface with filtering, sorting, and grouping capabilities. This component is designed to be consumed by other applications via Module Federation.
 
@@ -22,11 +22,13 @@ A React micro frontend component that provides a complete music library interfac
 - **Lucide React** - Modern icon library
 - **JavaScript Array Methods** - Extensive use of map, filter, reduce
 
-## 📦 Installation
+## 📦 How to Run Locally
 
-1. **Clone the repository and navigate to music-library:**
+1. **Clone the repository and install dependencies:**
    ```bash
-   cd music-library
+   git clone <your-repo-url>
+   cd Assignment/music-library
+   npm install
    ```
 
 2. **Install dependencies:**
@@ -36,12 +38,19 @@ A React micro frontend component that provides a complete music library interfac
 
 ## 🏃‍♂️ Development
 
-**Start the development server:**
+**Start the development server (Remote first):**
 ```bash
 npm run dev
 ```
 
-The app will be available at `http://localhost:5174`
+The remote will be available at `http://localhost:5174`.
+
+If you're integrating with the host (main-app) locally, start the host in another terminal:
+```bash
+cd ../main-app
+npm install
+npm run dev  # http://localhost:5173
+```
 
 **Build for production:**
 ```bash
@@ -52,6 +61,8 @@ npm run build
 ```bash
 npm run preview
 ```
+
+This serves the built remote at a local URL so you can validate `remoteEntry.js` and assets.
 
 ## 🏗️ Project Structure
 
@@ -171,27 +182,39 @@ federation({
   filename: 'remoteEntry.js',
   exposes: {
     './MusicLibrary': './src/App.jsx'
-  }
+  },
+  shared: ['react', 'react-dom']
 })
 ```
 
-## 🚀 Deployment
+How it integrates with the host:
+- Host `main-app` maps the remote in `vite.config.js` under the same key `music-library`.
+- Host lazy-loads it via `import('music-library/MusicLibrary')`.
+- Host passes props: `songs`, `role`, `onAddSong`, `onDeleteSong`.
+- Remote renders UI only; mutations call host callbacks so state stays centralized in the host.
 
-### Vercel Deployment
+Role-based behavior note:
+- The remote receives the current role via `role` prop from the host.
+- Admin role renders add/delete controls; user role renders read-only UI.
+
+## 🚀 How We Deployed It
+
+### Vercel – Remote (music-library)
 
 1. **Push your code to GitHub**
 
 2. **Connect to Vercel:**
    - Import your repository in Vercel
    - Set the root directory to `music-library`
-   - No environment variables needed
+   - No environment variables are required for the remote
 
 3. **Deploy:**
    - Build command: `npm run build`
    - Output directory: `dist`
-   - The `remoteEntry.js` will be available at `/assets/remoteEntry.js`
+   - After deploy, note the URL to `https://<your-remote-domain>/assets/remoteEntry.js`
+   - Configure the host env var `VITE_MUSIC_LIB_REMOTE` to point to that URL
 
-### Netlify Deployment
+### Netlify – Remote (music-library)
 
 1. **Build the app:**
    ```bash
@@ -203,6 +226,7 @@ federation({
    - Or connect your GitHub repository
    - Build command: `npm run build`
    - Publish directory: `dist`
+   - After deploy, copy the full `remoteEntry.js` URL and update the host env var
 
 ## 🧪 Testing Standalone
 
@@ -212,7 +236,11 @@ The component can run independently for testing:
 npm run dev
 ```
 
-This will show the component with default sample songs and full functionality.
+This shows the component with default sample songs and full functionality. Role-based restrictions are best tested via the host app which sends the `role` prop.
+
+Demo credentials (in host app):
+- Admin: `admin@test.com` / `admin123`
+- User: `user@test.com` / `user123`
 
 ## 🔗 Integration Example
 
