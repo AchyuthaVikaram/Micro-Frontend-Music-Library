@@ -40,11 +40,13 @@ A modern React application that serves as the container in a micro frontend arch
 
 3. **Start dev servers (start remote first)**
    ```bash
-   # Terminal A (Remote – music-library)
-   npm run dev    # http://localhost:5174
-
-   # Terminal B (Host – main-app)
+   # Terminal A (Host – main-app)
    npm run dev    # http://localhost:5173
+   
+   # Terminal B (Remote – music-library)
+   npm run build
+   npm run preview    # http://localhost:5174
+
    ```
 
 4. **Open the container** at `http://localhost:5173` and log in using demo credentials below.
