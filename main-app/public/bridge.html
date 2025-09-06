@@ -1,0 +1,63 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Data Sync Bridge (Main App)</title>
+  </head>
+  <body>
+    <script>
+      (function () {
+        const STORAGE_KEY = 'musicLibrarySongs';
+        const ALLOWED_ORIGINS = [
+          'http://localhost:5174',
+          'http://127.0.0.1:5174'
+        ];
+
+        function isAllowed(origin) {
+          return ALLOWED_ORIGINS.includes(origin);
+        }
+
+        function getSongs() {
+          try {
+            const raw = localStorage.getItem(STORAGE_KEY);
+            return raw ? JSON.parse(raw) : [];
+          } catch (e) {
+            console.error('Bridge getSongs error:', e);
+            return [];
+          }
+        }
+
+        function setSongs(data) {
+          try {
+            const safe = Array.isArray(data) ? data : [];
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(safe));
+            // Broadcast to same-tab listeners
+            window.dispatchEvent(new CustomEvent('songsUpdated', { detail: safe }));
+            return safe;
+          } catch (e) {
+            console.error('Bridge setSongs error:', e);
+            return [];
+          }
+        }
+
+        window.addEventListener('message', (event) => {
+          if (!isAllowed(event.origin)) return;
+          const { type, payload, requestId } = event.data || {};
+
+          if (type === 'REQUEST_SONGS') {
+            const songs = getSongs();
+            event.source?.postMessage({ type: 'RESPONSE_SONGS', payload: songs, requestId }, event.origin);
+          }
+
+          if (type === 'UPDATE_SONGS') {
+            const updated = setSongs(payload || []);
+            event.source?.postMessage({ type: 'ACK_UPDATE', payload: { count: updated.length }, requestId }, event.origin);
+          }
+        });
+
+        // Optional: respond when loaded
+        window.parent?.postMessage({ type: 'BRIDGE_READY' }, '*');
+      })();
+    </script>
+  </body>
+</html>

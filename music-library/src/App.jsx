@@ -7,7 +7,7 @@ import { filterSongsByQuery } from './utils/filterSongs';
 import { sortSongs } from './utils/sortSongs';
 import { groupSongs } from './utils/groupSongs';
 import dataSyncService from './utils/dataSync';
-import { Music, Plus, X } from 'lucide-react';
+import { Music, Plus, X, RefreshCw } from 'lucide-react';
 
 // Add Song Modal Component
 const AddSongModal = ({ isOpen, onClose, onAddSong }) => {
@@ -291,6 +291,11 @@ const MusicLibrary = ({
     setShowAddModal(true);
   };
 
+  const handleManualSync = () => {
+    console.log('🔄 Manual sync triggered');
+    dataSyncService.syncFromStorage();
+  };
+
   // Show loading state
   if (isLoading) {
     return (
@@ -324,9 +329,21 @@ const MusicLibrary = ({
           <h1 className="text-4xl font-bold text-white mb-2">
             Music Library
           </h1>
-          <p className="text-gray-400">
+          <p className="text-gray-400 mb-4">
             {songs.length} songs • {role === 'admin' ? 'Admin Access' : 'User Access'}
           </p>
+          
+          {/* Manual Sync Button */}
+          <div className="flex justify-center">
+            <button
+              onClick={handleManualSync}
+              className="flex items-center gap-2 bg-gray-700 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors"
+              title="Sync with main app data"
+            >
+              <RefreshCw className="w-4 h-4" />
+              Sync Data
+            </button>
+          </div>
         </motion.div>
 
         {/* Filter Bar */}
