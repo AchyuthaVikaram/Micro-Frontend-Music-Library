@@ -2,8 +2,10 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, LogIn, AlertCircle, Music, User } from 'lucide-react';
+import { Mail, Lock, LogIn, AlertCircle, Music, User, UserPlus } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { registerUser } from '../utils/authHelpers';
+import { useToast } from '../context/ToastContext';
 
 const AuthForm = ({ onSuccess }) => {
   const [formData, setFormData] = useState({
@@ -12,7 +14,9 @@ const AuthForm = ({ onSuccess }) => {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [isSignup, setIsSignup] = useState(false);
   const { login } = useAuth();
+  const { push } = useToast();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -20,10 +24,19 @@ const AuthForm = ({ onSuccess }) => {
     setLoading(true);
 
     try {
-      await login(formData.email, formData.password);
+      if (isSignup) {
+        // Register then login for seamless UX
+        const res = await registerUser(formData.email, formData.password);
+        push({ title: 'Account created', description: 'Welcome to Music Library!', variant: 'success' });
+        await login(formData.email, formData.password);
+      } else {
+        await login(formData.email, formData.password);
+        push({ title: 'Signed in', description: 'You are now logged in.', variant: 'success' });
+      }
       onSuccess?.();
     } catch (err) {
       setError(err.message);
+      push({ title: 'Action failed', description: err.message, variant: 'error' });
     } finally {
       setLoading(false);
     }
@@ -92,8 +105,8 @@ const AuthForm = ({ onSuccess }) => {
                 <Music className="w-8 h-8 text-white" />
               </div>
             </div>
-            <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
-            <p className="text-gray-400">Sign in to access your music library</p>
+            <h1 className="text-3xl font-bold text-white mb-2">{isSignup ? 'Create Account' : 'Welcome Back'}</h1>
+            <p className="text-gray-400">{isSignup ? 'Sign up to get started' : 'Sign in to access your music library'}</p>
           </motion.div>
 
           {/* Demo Credentials */}
@@ -103,27 +116,35 @@ const AuthForm = ({ onSuccess }) => {
             transition={{ delay: 0.4, duration: 0.6 }}
             className="mb-6"
           >
-            <p className="text-gray-300 text-sm mb-3 font-medium">Quick Login:</p>
-            <div className="grid grid-cols-2 gap-3">
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handlePresetLogin('admin')}
-                className="flex items-center gap-2 p-3 bg-red-600/20 border border-red-600/30 rounded-lg text-red-200 hover:bg-red-600/30 transition-all duration-200"
-              >
-                <User className="w-4 h-4" />
-                <span className="text-sm font-medium">Admin</span>
-              </motion.button>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                onClick={() => handlePresetLogin('user')}
-                className="flex items-center gap-2 p-3 bg-blue-600/20 border border-blue-600/30 rounded-lg text-blue-200 hover:bg-blue-600/30 transition-all duration-200"
-              >
-                <User className="w-4 h-4" />
-                <span className="text-sm font-medium">User</span>
-              </motion.button>
-            </div>
+            {!isSignup ? (
+              <>
+                <p className="text-gray-300 text-sm mb-3 font-medium">Quick Login:</p>
+                <div className="grid grid-cols-2 gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handlePresetLogin('admin')}
+                    className="flex items-center gap-2 p-3 bg-red-600/20 border border-red-600/30 rounded-lg text-red-200 hover:bg-red-600/30 transition-all duration-200"
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="text-sm font-medium">Admin</span>
+                  </motion.button>
+                  <motion.button
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                    onClick={() => handlePresetLogin('user')}
+                    className="flex items-center gap-2 p-3 bg-blue-600/20 border border-blue-600/30 rounded-lg text-blue-200 hover:bg-blue-600/30 transition-all duration-200"
+                  >
+                    <User className="w-4 h-4" />
+                    <span className="text-sm font-medium">User</span>
+                  </motion.button>
+                </div>
+              </>
+            ) : (
+              <div className="text-gray-400 text-sm">
+                Create a new account with email and password. Role defaults to user.
+              </div>
+            )}
           </motion.div>
 
           {/* Login Form */}
@@ -179,22 +200,32 @@ const AuthForm = ({ onSuccess }) => {
               </motion.div>
             </div>
 
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              type="submit"
-              disabled={loading}
-              className="w-full bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {loading ? (
-                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-              ) : (
-                <>
-                  <LogIn className="w-5 h-5" />
-                  Sign In
-                </>
-              )}
-            </motion.button>
+            <div className="space-y-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                type="submit"
+                disabled={loading}
+                className="w-full bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-md font-medium transition-colors flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? (
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    {isSignup ? <UserPlus className="w-5 h-5" /> : <LogIn className="w-5 h-5" />}
+                    {isSignup ? 'Sign Up' : 'Sign In'}
+                  </>
+                )}
+              </motion.button>
+
+              <button
+                type="button"
+                onClick={() => { setIsSignup(!isSignup); setError(''); }}
+                className="w-full text-sm text-gray-300 hover:text-white underline-offset-4 hover:underline"
+              >
+                {isSignup ? 'Already have an account? Sign in' : "Don't have an account? Create one"}
+              </button>
+            </div>
           </motion.form>
 
           {/* Demo Info */}

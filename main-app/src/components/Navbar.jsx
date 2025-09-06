@@ -2,14 +2,19 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LogOut, Music, User, Shield } from 'lucide-react';
+import { LogOut, Music, User, Shield, Menu } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
-const Navbar = () => {
+const Navbar = ({ onMenuClick }) => {
   const { user, logout, isAdmin } = useAuth();
+  const { push } = useToast();
 
   const handleLogout = () => {
     logout();
+    try {
+      push({ title: 'Signed out', description: 'You have been logged out.', variant: 'success' });
+    } catch {}
   };
 
   return (
@@ -18,12 +23,21 @@ const Navbar = () => {
       animate={{ y: 0, opacity: 1 }}
       className="bg-gray-800/80 backdrop-blur-lg border-b border-gray-700 px-6 py-4"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         {/* Logo and Title */}
         <motion.div
           whileHover={{ scale: 1.02 }}
           className="flex items-center gap-3"
         >
+          {/* Mobile menu button */}
+          <button
+            type="button"
+            onClick={onMenuClick}
+            className="md:hidden inline-flex items-center justify-center rounded-md p-2 text-gray-300 hover:text-white hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Open sidebar"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
           <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-2 rounded-lg">
             <Music className="w-6 h-6 text-white" />
           </div>

@@ -12,11 +12,63 @@ export const createMockJWT = (user) => {
     role: user.role,
     name: user.name,
     iat: Math.floor(Date.now() / 1000),
-    exp: Math.floor(Date.now() / 1000) + (24 * 60 * 60) // 24 hours
+    exp: Math.floor(Date.now() / 1000) + 24 * 60 * 60,
   };
-  
   // In a real app, this would be properly signed
   return btoa(JSON.stringify(payload));
+};
+
+// Local user storage key
+const USERS_KEY = 'users_db';
+
+export const getAllUsers = () => {
+  try {
+    const raw = localStorage.getItem(USERS_KEY);
+    const db = raw ? JSON.parse(raw) : {};
+    return { ...MOCK_USERS, ...db };
+  } catch (e) {
+    console.error('Failed to read users_db:', e);
+    return { ...MOCK_USERS };
+  }
+};
+
+export const saveUsers = (users) => {
+  try {
+    // Do not save MOCK_USERS to LS; only custom users
+    const customEntries = Object.fromEntries(
+      Object.entries(users).filter(([email]) => !MOCK_USERS[email])
+    );
+    localStorage.setItem(USERS_KEY, JSON.stringify(customEntries));
+  } catch (e) {
+    console.error('Failed to save users_db:', e);
+  }
+};
+
+export const userExists = (email) => {
+  const users = getAllUsers();
+  const emailNorm = String(email || '').toLowerCase();
+  return !!users[emailNorm];
+};
+
+/**
+ * Registers a new user into local storage (mock backend)
+ */
+export const registerUser = async (email, password, name = '', role = 'user') => {
+  await new Promise((r) => setTimeout(r, 400));
+  const emailNorm = String(email || '').toLowerCase();
+  if (!emailNorm || !password) throw new Error('Email and password are required');
+  const users = getAllUsers();
+  if (users[emailNorm]) throw new Error('User already exists');
+  const id = Math.max(2, ...Object.values(users).map((u) => u.id || 2)) + 1;
+  const newUser = { id, username: emailNorm, password, role, name: name || emailNorm.split('@')[0] };
+  const updated = { ...users, [emailNorm]: newUser };
+  saveUsers(updated);
+  // Return token like authenticate
+  const token = createMockJWT(newUser);
+  return {
+    user: { id: newUser.id, username: newUser.username, role: newUser.role, name: newUser.name },
+    token,
+  };
 };
 
 /**
@@ -135,8 +187,8 @@ export const MOCK_USERS = {
 export const authenticateUser = async (email, password) => {
   // Simulate API delay
   await new Promise(resolve => setTimeout(resolve, 500));
-  
-  const user = MOCK_USERS[email];
+  const emailNorm = String(email || '').toLowerCase();
+  const user = getAllUsers()[emailNorm];
   
   if (!user || user.password !== password) {
     throw new Error('Invalid email or password');

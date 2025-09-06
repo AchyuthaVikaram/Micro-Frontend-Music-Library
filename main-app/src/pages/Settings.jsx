@@ -5,8 +5,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Settings as SettingsIcon, 
   Music, 
-  Users, 
-  Settings2,
   Plus,
   Edit,
   Trash2,
@@ -139,9 +137,7 @@ const Settings = () => {
   }
 
   const tabs = [
-    { id: 'songs', label: 'Song Management', icon: Music },
-    { id: 'users', label: 'User Management', icon: Users },
-    { id: 'system', label: 'System Settings', icon: Settings2 }
+    { id: 'songs', label: 'Song Management', icon: Music }
   ];
 
   return (
@@ -160,7 +156,7 @@ const Settings = () => {
             <div>
               <h1 className="text-3xl font-bold text-white">Settings</h1>
               <p className="text-gray-400">
-                Manage your music library and system configuration
+                Manage your music library
               </p>
             </div>
           </div>
@@ -290,37 +286,7 @@ const Settings = () => {
             </motion.div>
           )}
 
-          {activeTab === 'users' && (
-            <motion.div
-              key="users"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6"
-            >
-              <div className="text-center py-12">
-                <Users className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">User Management</h3>
-                <p className="text-gray-400">User management features coming soon...</p>
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === 'system' && (
-            <motion.div
-              key="system"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6"
-            >
-              <div className="text-center py-12">
-                <Settings2 className="w-16 h-16 text-gray-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold text-white mb-2">System Settings</h3>
-                <p className="text-gray-400">System configuration options coming soon...</p>
-              </div>
-            </motion.div>
-          )}
+          {/* Removed Users and System tabs for this assignment as no backend is used */}
         </AnimatePresence>
 
         {/* Add Song Modal */}

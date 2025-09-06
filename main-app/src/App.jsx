@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { SongsProvider } from './context/SongsContext';
+import { ToastProvider } from './context/ToastContext';
 import Protected from './components/Protected';
 import Navbar from './components/Navbar';
 import Sidebar from './components/Sidebar';
@@ -13,14 +14,36 @@ import { useAuth } from './context/AuthContext';
 
 // Layout component for authenticated pages
 const AppLayout = ({ children }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(true); // desktop
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false); // mobile overlay
 
   return (
-    <div className="flex h-screen bg-gray-900">
-      <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+    <div className="relative flex min-h-screen bg-gray-900">
+      {/* Desktop sidebar */}
+      <div className="hidden md:block">
+        <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
+      </div>
+
+      {/* Mobile sidebar overlay */}
+      {mobileSidebarOpen && (
+        <div className="fixed inset-0 z-40 flex md:hidden">
+          {/* Backdrop */}
+          <div
+            className="fixed inset-0 bg-black/50"
+            onClick={() => setMobileSidebarOpen(false)}
+            aria-hidden="true"
+          />
+          {/* Panel */}
+          <div className="relative z-40 w-64 max-w-[80%] h-full bg-gray-800/95 border-r border-gray-700">
+            <Sidebar isOpen={true} onToggle={() => setMobileSidebarOpen(false)} />
+          </div>
+        </div>
+      )}
+
+      {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden">
-        <Navbar />
-        <main className="flex-1 overflow-auto">
+        <Navbar onMenuClick={() => setMobileSidebarOpen(true)} />
+        <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
           {children}
         </main>
       </div>
@@ -90,9 +113,11 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <SongsProvider>
-          <AppContent />
-        </SongsProvider>
+        <ToastProvider>
+          <SongsProvider>
+            <AppContent />
+          </SongsProvider>
+        </ToastProvider>
       </AuthProvider>
     </Router>
   );

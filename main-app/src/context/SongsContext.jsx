@@ -1,6 +1,7 @@
 // Assignment/main-app/src/context/SongsContext.jsx
 
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { useToast } from './ToastContext';
 import dataSyncService from '../utils/dataSync';
 
 const SongsContext = createContext();
@@ -14,6 +15,7 @@ export const useSongs = () => {
 };
 
 export const SongsProvider = ({ children }) => {
+  const { push } = useToast();
   const [songs, setSongs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -49,25 +51,47 @@ export const SongsProvider = ({ children }) => {
 
   // Memoize the callback functions to prevent unnecessary re-renders
   const addSong = useCallback((newSong) => {
-    console.log('🎵 SongsContext: Adding song:', newSong.title);
-    const addedSong = dataSyncService.addSong(newSong);
-    return addedSong;
-  }, []);
+    const song = {
+      ...newSong,
+      id: Math.max(...songs.map(s => s.id), 0) + 1,
+      year: newSong.year ? parseInt(newSong.year) : null
+    };
+    setSongs(prevSongs => [...prevSongs, song]);
+    try {
+      push({ title: 'Song added', description: `${song.title} by ${song.artist}`, variant: 'success' });
+    } catch {}
+    return song;
+  }, [songs, push]);
 
-  const updateSong = useCallback((songId, updatedSong) => {
-    console.log('🎵 SongsContext: Updating song:', songId);
-    const updatedSongData = dataSyncService.updateSong(songId, updatedSong);
-    return updatedSongData;
-  }, []);
-
-  const deleteSong = useCallback((songId) => {
-    console.log('🎵 SongsContext: Deleting song:', songId);
-    dataSyncService.deleteSong(songId);
-  }, []);
-
+  // Define getSongById BEFORE other callbacks that reference it
   const getSongById = useCallback((songId) => {
     return dataSyncService.getSongById(songId);
   }, []);
+
+  const updateSong = useCallback((songId, updatedSong) => {
+    setSongs(prevSongs =>
+      prevSongs.map(song =>
+        song.id === songId
+          ? { ...updatedSong, id: songId, year: updatedSong.year ? parseInt(updatedSong.year) : null }
+          : song
+      )
+    );
+    try {
+      const t = updatedSong?.title || getSongById(songId)?.title || 'Song';
+      push({ title: 'Song updated', description: `${t} updated successfully`, variant: 'success' });
+    } catch {}
+    return dataSyncService.updateSong(songId, updatedSong);
+  }, [push, getSongById]);
+
+  const deleteSong = useCallback((songId) => {
+    setSongs(prevSongs => prevSongs.filter(song => song.id !== songId));
+    try {
+      const removed = getSongById(songId);
+      const label = removed ? removed.title : 'Song';
+      push({ title: 'Song deleted', description: `${label} removed`, variant: 'success' });
+    } catch {}
+    dataSyncService.deleteSong(songId);
+  }, [push, getSongById]);
 
   const refreshSongs = useCallback(() => {
     console.log('🎵 SongsContext: Manually refreshing songs');
