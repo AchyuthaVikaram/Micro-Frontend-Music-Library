@@ -43,7 +43,7 @@ const MusicLibrary = lazy(() =>
 
 const Dashboard = () => {
   const { user, isAdmin } = useAuth();
-  const { songs, addSong, deleteSong } = useSongs();
+  const { songs, addSong, deleteSong, isLoading: songsLoading } = useSongs();
   const [remoteLoaded, setRemoteLoaded] = useState(false);
 
   useEffect(() => {
@@ -139,9 +139,15 @@ const Dashboard = () => {
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-blue-400" />
+              <div className={`w-2 h-2 rounded-full ${songsLoading ? 'bg-yellow-400' : 'bg-blue-400'}`} />
               <span className="text-gray-400">
-                Songs: {songs.length} tracks loaded
+                Songs: {songsLoading ? 'Loading...' : `${songs.length} tracks loaded`}
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-purple-400" />
+              <span className="text-gray-400">
+                Data Sync: Active
               </span>
             </div>
           </div>

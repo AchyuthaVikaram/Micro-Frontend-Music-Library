@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import FilterBar from './components/FilterBar';
 import SongCard from './components/SongCard';
@@ -6,6 +6,7 @@ import GroupedSongs from './components/GroupedSongs';
 import { filterSongsByQuery } from './utils/filterSongs';
 import { sortSongs } from './utils/sortSongs';
 import { groupSongs } from './utils/groupSongs';
+import dataSyncService from './utils/dataSync';
 import { Music, Plus, X } from 'lucide-react';
 
 // Add Song Modal Component
@@ -191,70 +192,51 @@ const MusicLibrary = ({
   const [groupBy, setGroupBy] = useState('album');
   const [isGrouped, setIsGrouped] = useState(false);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Shared state management using localStorage
-  const [songs, setSongs] = useState(() => {
-    const storedSongs = localStorage.getItem('musicLibrarySongs');
-    if (storedSongs) {
-      try {
-        const parsed = JSON.parse(storedSongs);
-        console.log('🎵 Loaded songs from localStorage:', parsed.length);
-        return parsed;
-      } catch (error) {
-        console.error('Error parsing localStorage songs:', error);
-        return propsSongs.length > 0 ? propsSongs : [];
-      }
-    }
-    // Initialize with props if available, otherwise empty array
-    console.log('🎵 No localStorage songs, using props:', propsSongs.length);
-    return propsSongs.length > 0 ? propsSongs : [];
-  });
+  // Use dataSyncService for state management
+  const [songs, setSongs] = useState([]);
 
-  // Initialize localStorage if empty and we have songs
+  // Initialize with data from the sync service
   useEffect(() => {
-    const storedSongs = localStorage.getItem('musicLibrarySongs');
-    if (!storedSongs && songs.length === 0 && propsSongs.length > 0) {
-      console.log('🎵 Initializing localStorage with props songs');
-      setSongs(propsSongs);
-    }
-  }, [propsSongs]);
+    console.log('🎵 MusicLibrary: Initializing with dataSyncService...');
+    
+    // Get initial data
+    const initialData = dataSyncService.getData();
+    setSongs(initialData);
+    setIsLoading(false);
+    
+    console.log('🎵 MusicLibrary: Initial data loaded:', initialData.length, 'songs');
 
-  // Sync with localStorage and listen for changes from other windows/tabs
-  useEffect(() => {
-    // Save to localStorage whenever songs change
-    localStorage.setItem('musicLibrarySongs', JSON.stringify(songs));
+    // Subscribe to data changes with a stable callback
+    const unsubscribe = dataSyncService.subscribe((newData) => {
+      console.log('🎵 MusicLibrary: Received data update:', newData.length, 'songs');
+      // Only update if the data has actually changed
+      setSongs(prevSongs => {
+        if (JSON.stringify(prevSongs) !== JSON.stringify(newData)) {
+          return newData;
+        }
+        return prevSongs;
+      });
+    });
 
-    // Dispatch custom event to notify other instances
-    window.dispatchEvent(new CustomEvent('songsUpdated', { detail: songs }));
-  }, [songs]);
-
-  // Listen for localStorage changes from other windows/tabs
-  useEffect(() => {
-    const handleStorageChange = (e) => {
-      if (e.key === 'musicLibrarySongs' && e.newValue) {
-        setSongs(JSON.parse(e.newValue));
-      }
-    };
-
-    const handleCustomSongsUpdate = (e) => {
-      setSongs(e.detail);
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    window.addEventListener('songsUpdated', handleCustomSongsUpdate);
-
+    // Cleanup subscription on unmount
     return () => {
-      window.removeEventListener('storage', handleStorageChange);
-      window.removeEventListener('songsUpdated', handleCustomSongsUpdate);
+      console.log('🎵 MusicLibrary: Cleaning up subscription');
+      unsubscribe();
     };
   }, []);
 
   // Sync with props when they change (for micro frontend integration)
   useEffect(() => {
     if (propsSongs && propsSongs.length > 0) {
-      setSongs(propsSongs);
+      console.log('🎵 MusicLibrary: Syncing with props songs:', propsSongs.length);
+      // Only sync if we have props songs and our local state is empty
+      if (songs.length === 0) {
+        dataSyncService.setData(propsSongs);
+      }
     }
-  }, [propsSongs]);
+  }, [propsSongs]); // Remove songs.length from dependencies to prevent loops
 
   // Debug logging
   console.log('🎵 MusicLibrary state:', {
@@ -263,7 +245,8 @@ const MusicLibrary = ({
     role,
     hasOnAddSong: !!onAddSong,
     hasOnDeleteSong: !!onDeleteSong,
-    firstSong: songs[0]?.title || 'No songs'
+    firstSong: songs[0]?.title || 'No songs',
+    isLoading
   });
 
   // Process songs with filter, sort, and group
@@ -278,23 +261,47 @@ const MusicLibrary = ({
     return sorted;
   }, [songs, searchQuery, sortBy, groupBy, isGrouped]);
 
-  const handleAddSong = (songData) => {
+  const handleAddSong = useCallback((songData) => {
+    console.log('🎵 MusicLibrary: Adding song:', songData.title);
+    
+    // Use dataSyncService to add the song
+    const addedSong = dataSyncService.addSong(songData);
+    
+    // Also call the parent's onAddSong if provided (for micro frontend integration)
     if (onAddSong) {
-      setSongs([...songs, songData]);
-      onAddSong(songData);
+      onAddSong(addedSong);
     }
-  };
+    
+    return addedSong;
+  }, [onAddSong]);
 
-  const handleDeleteSong = (songId) => {
+  const handleDeleteSong = useCallback((songId) => {
+    console.log('🎵 MusicLibrary: Deleting song:', songId);
+    
+    // Use dataSyncService to delete the song
+    dataSyncService.deleteSong(songId);
+    
+    // Also call the parent's onDeleteSong if provided (for micro frontend integration)
     if (onDeleteSong) {
-      setSongs(songs.filter(song => song.id !== songId));
       onDeleteSong(songId);
     }
-  };
+  }, [onDeleteSong]);
 
   const handleOpenAddModal = () => {
     setShowAddModal(true);
   };
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-900 p-6 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
+          <p className="text-gray-400">Loading Music Library...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-900 p-6">
