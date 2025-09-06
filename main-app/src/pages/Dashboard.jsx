@@ -8,7 +8,7 @@ import { useSongs } from '../context/SongsContext';
 
 // Enhanced lazy loading with retry mechanism
 const MusicLibrary = lazy(() => 
-  import('musicLibrary/MusicLibrary')
+  import('music-library/MusicLibrary')
     .then(module => {
       console.log('✅ Music Library loaded successfully');
       return module;
@@ -109,58 +109,76 @@ const Dashboard = () => {
   });
 
   return (
-    <div className="min-h-screen bg-gray-900 p-6">
+    <div className="min-h-screen bg-gray-900 px-4 py-5 sm:px-6 md:px-8">
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
+        initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="max-w-7xl mx-auto"
+        className="mx-auto max-w-7xl"
       >
         {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-gradient-to-r from-blue-500 to-purple-500 p-3 rounded-xl">
-              <Music className="w-8 h-8 text-white" />
+        <div className="mb-6 md:mb-8">
+          <div className="flex flex-col items-center justify-center gap-3 text-center md:flex-row md:justify-start md:text-left md:gap-4 mb-4">
+            <div className="rounded-xl bg-gradient-to-r from-blue-600 to-purple-600 p-3">
+              <Music className="h-7 w-7 text-white md:h-8 md:w-8" />
             </div>
             <div>
-              <h1 className="text-3xl font-bold text-white">Music Library Dashboard</h1>
-              <p className="text-gray-400">
-                Welcome back, <span className="text-blue-400">{user?.name}</span>! 
-                You're logged in as <span className="capitalize text-purple-400">{user?.role}</span>
+              <h1 className="text-xl md:text-2xl font-bold text-white tracking-tight">Music Library Dashboard</h1>
+              <p className="text-sm md:text-base text-gray-400 mt-0.5">
+                Welcome back, <span className="text-blue-400">{user?.name}</span>!
+                <span className="mx-1 hidden md:inline">•</span>
+                <span className="block md:inline">Role: <span className="capitalize text-purple-400">{user?.role}</span></span>
               </p>
             </div>
           </div>
 
-          {/* Connection Status */}
-          <div className="flex items-center gap-4 text-sm">
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${remoteLoaded ? 'bg-green-400' : 'bg-red-400'}`} />
-              <span className="text-gray-400">
-                Remote Status: {remoteLoaded ? 'Connected' : 'Checking...'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className={`w-2 h-2 rounded-full ${songsLoading ? 'bg-yellow-400' : 'bg-blue-400'}`} />
-              <span className="text-gray-400">
-                Songs: {songsLoading ? 'Loading...' : `${songs.length} tracks loaded`}
-              </span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-purple-400" />
-              <span className="text-gray-400">
-                Data Sync: Active
-              </span>
-            </div>
+          {/* Status Widgets: stacked on mobile, pills on desktop */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {/* Remote Status */}
+            <motion.div
+              whileHover={{ y: -1 }}
+              className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-800/60 px-4 py-3"
+            >
+              <span className={`h-2.5 w-2.5 rounded-full ${remoteLoaded ? 'bg-green-400' : 'bg-red-400'}`} />
+              <div className="flex-1">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Remote Status</p>
+                <p className="text-sm font-medium text-white">{remoteLoaded ? 'Connected' : 'Checking...'}</p>
+              </div>
+            </motion.div>
+
+            {/* Songs Count */}
+            <motion.div
+              whileHover={{ y: -1 }}
+              className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-800/60 px-4 py-3"
+            >
+              <span className={`h-2.5 w-2.5 rounded-full ${songsLoading ? 'bg-yellow-400' : 'bg-blue-400'}`} />
+              <div className="flex-1">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Tracks</p>
+                <p className="text-sm font-medium text-white">{songsLoading ? 'Loading...' : `${songs.length} loaded`}</p>
+              </div>
+            </motion.div>
+
+            {/* Data Sync */}
+            <motion.div
+              whileHover={{ y: -1 }}
+              className="flex items-center gap-3 rounded-xl border border-gray-800 bg-gray-800/60 px-4 py-3"
+            >
+              <span className="h-2.5 w-2.5 rounded-full bg-purple-400" />
+              <div className="flex-1">
+                <p className="text-xs uppercase tracking-wide text-gray-400">Data Sync</p>
+                <p className="text-sm font-medium text-white">Active</p>
+              </div>
+            </motion.div>
           </div>
         </div>
 
         {/* Music Library Component */}
-        <div className="bg-gray-800/50 backdrop-blur-sm border border-gray-700 rounded-2xl p-6">
-          <Suspense 
+        <div className="rounded-2xl border border-gray-800 bg-gray-800/50 backdrop-blur-sm p-4 md:p-6">
+          <Suspense
             fallback={
-              <div className="flex flex-col items-center justify-center p-12 text-center">
-                <div className="w-12 h-12 border-4 border-blue-500/30 border-t-blue-500 rounded-full animate-spin mb-4" />
-                <p className="text-gray-400 mb-2">Loading Music Library...</p>
-                <p className="text-sm text-gray-500">Connecting to micro frontend on port 5174</p>
+              <div className="flex flex-col items-center justify-center p-10 md:p-12 text-center">
+                <div className="mb-4 h-10 w-10 animate-spin rounded-full border-4 border-blue-500/30 border-t-blue-500" />
+                <p className="mb-1 text-gray-300">Loading Music Library...</p>
+                <p className="text-xs text-gray-500">Connecting to micro frontend on port 5174</p>
               </div>
             }
           >

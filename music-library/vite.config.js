@@ -10,7 +10,7 @@ export default defineConfig({
     react(),
     tailwindcss(),
     federation({
-      name: 'musicLibrary',
+      name: 'music-library',
       filename: 'remoteEntry.js',
       exposes: {
         './MusicLibrary': './src/App.jsx',

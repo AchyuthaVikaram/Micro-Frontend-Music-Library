@@ -12,7 +12,7 @@ export default defineConfig({
     federation({
       name: 'mainApp',
       remotes: {
-        'musicLibrary': 'http://localhost:5174/assets/remoteEntry.js'
+        'music-library': 'http://localhost:5174/assets/remoteEntry.js'
       },
       shared: ['react', 'react-dom']
     })

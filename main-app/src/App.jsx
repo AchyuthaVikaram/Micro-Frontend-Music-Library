@@ -19,8 +19,8 @@ const AppLayout = ({ children }) => {
 
   return (
     <div className="relative flex min-h-screen bg-gray-900">
-      {/* Desktop sidebar */}
-      <div className="hidden md:block">
+      {/* Desktop sidebar - fixed 20% width */}
+      <div className="hidden md:block w-1/5 min-w-[240px]">
         <Sidebar isOpen={sidebarOpen} onToggle={() => setSidebarOpen(!sidebarOpen)} />
       </div>
 
@@ -40,8 +40,8 @@ const AppLayout = ({ children }) => {
         </div>
       )}
 
-      {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      {/* Main content - 80% on desktop */}
+      <div className="flex-1 md:w-4/5 flex flex-col overflow-hidden min-w-0">
         <Navbar onMenuClick={() => setMobileSidebarOpen(true)} />
         <main className="flex-1 overflow-auto p-3 sm:p-4 md:p-6">
           {children}
