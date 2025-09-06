@@ -32,10 +32,10 @@ A modern React application that serves as the container in a micro frontend arch
 2. **Install dependencies for BOTH apps**
    ```bash
    # Terminal A
-   cd music-library && npm install
-
-   # Terminal B
    cd main-app && npm install
+   
+   # Terminal B
+   cd music-library && npm install
    ```
 
 3. **Start dev servers (start remote first)**
