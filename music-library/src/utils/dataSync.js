@@ -17,7 +17,14 @@ class DataSyncService {
     const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
     const allowedParam = currentOrigin ? `?allowed=${encodeURIComponent(currentOrigin)}` : '';
     this.bridgeUrl = `${BASE_URL}/bridge.html${allowedParam}`;
-    this.bridgeOrigin = BASE_URL;
+    // Correctly derive the origin (scheme + hostname + port) from the full URL
+    try {
+      this.bridgeOrigin = new URL(BASE_URL).origin;
+    } catch (e) {
+      console.error('Invalid BASE_URL for bridge origin:', BASE_URL);
+      // Fallback for safety, though it might not work if BASE_URL is malformed
+      this.bridgeOrigin = BASE_URL;
+    }
     this.bridgeWindow = null;
     this.bridgeReady = false;
     this.pendingRequests = new Map(); // requestId -> { resolve, reject, timer }
