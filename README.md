@@ -4,6 +4,8 @@ This repository contains a micro frontend demo with two Vite + React apps:
 - `main-app/` (Host/Container): Authentication, role-based access, Dashboard, and integration point.
 - `music-library/` (Remote): Music library UI exposed via Module Federation.
 
+Both apps are fully responsive across devices (mobile, tablet, desktop).
+
 ## How to run locally
 
 1) Update constants to use localhost URLs
