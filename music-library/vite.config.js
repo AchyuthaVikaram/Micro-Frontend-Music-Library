@@ -29,10 +29,8 @@ export default defineConfig({
     host: '0.0.0.0'
   },
   build: {
-    outDir: 'dist',
     target: 'esnext',
     minify: false,
     cssCodeSplit: false
-  },
-  base: '/music-library/'
+  }
 })

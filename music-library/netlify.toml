@@ -1,5 +1,0 @@
-# Set CORS headers for all assets to allow cross-origin requests
-[[headers]]
-  for = "/assets/*"
-  [headers.values]
-    Access-Control-Allow-Origin = "*"
