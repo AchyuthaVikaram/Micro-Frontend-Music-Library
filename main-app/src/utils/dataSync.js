@@ -4,39 +4,35 @@
 class DataSyncService {
   constructor() {
     this.storageKey = 'musicLibrarySongs';
-    this.eventName = 'songsUpdated';
+    this.channel = new BroadcastChannel('music_library_sync');
     this.listeners = new Set();
     this.isInitialized = false;
-    this.retryCount = 0;
-    this.maxRetries = 3;
   }
 
   // Initialize the service
   init() {
     if (this.isInitialized) return;
-    
-    console.log('🔄 Initializing DataSyncService...');
-    
-    // Set up event listeners
+    console.log('🔄 Initializing DataSyncService in main-app...');
     this.setupEventListeners();
-    
-    // Initialize with default data if needed
     this.initializeDefaultData();
-    
     this.isInitialized = true;
-    console.log('✅ DataSyncService initialized');
+    console.log('✅ DataSyncService initialized in main-app');
+    // Announce that the main app's data is ready
+    this.channel.postMessage({ type: 'DATA_READY', payload: this.getData() });
   }
 
   // Set up event listeners for cross-microfrontend communication
   setupEventListeners() {
-    // Listen for localStorage changes (cross-tab communication)
+    this.channel.onmessage = (event) => {
+      const { type } = event.data;
+      if (type === 'REQUEST_SONGS') {
+        console.log('📢 main-app: Received song request, broadcasting current data.');
+        this.channel.postMessage({ type: 'SYNC_SONGS', payload: this.getData() });
+      }
+    };
+
+    // Listen for localStorage changes to sync across tabs of the same app
     window.addEventListener('storage', this.handleStorageChange.bind(this));
-    
-    // Listen for custom events (same-tab communication)
-    window.addEventListener(this.eventName, this.handleCustomEvent.bind(this));
-    
-    // Listen for visibility changes to sync when tab becomes active
-    document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
   }
 
   // Handle localStorage changes from other tabs/windows
@@ -266,10 +262,11 @@ class DataSyncService {
       
       localStorage.setItem(this.storageKey, dataString);
       
-      // Notify listeners in same tab
-      window.dispatchEvent(new CustomEvent(this.eventName, { detail: dataToStore }));
+      // Notify listeners in same tab and across origins
+      this.notifyListeners(dataToStore);
+      this.channel.postMessage({ type: 'SYNC_SONGS', payload: dataToStore });
       
-      console.log('💾 Data saved and broadcasted:', dataToStore.length, 'songs');
+      console.log('💾 Data saved and broadcasted via BroadcastChannel:', dataToStore.length, 'songs');
       return dataToStore;
     } catch (error) {
       console.error('❌ Error saving data to localStorage:', error);

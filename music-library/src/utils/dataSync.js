@@ -6,166 +6,38 @@ import { BASE_URL } from './constants';
 class DataSyncService {
   constructor() {
     this.storageKey = 'musicLibrarySongs';
-    this.eventName = 'songsUpdated';
+    this.channel = new BroadcastChannel('music_library_sync');
     this.listeners = new Set();
     this.isInitialized = false;
-    this.retryCount = 0;
-    this.maxRetries = 3;
-
-    // Cross-origin bridge to main-app (origin derived from BASE_URL)
-    // Pass current origin as "allowed" query so bridge can authorize dynamically
-    const currentOrigin = typeof window !== 'undefined' ? window.location.origin : '';
-    const allowedParam = currentOrigin ? `?allowed=${encodeURIComponent(currentOrigin)}` : '';
-    this.bridgeUrl = `${BASE_URL}/bridge.html${allowedParam}`;
-    // Correctly derive the origin (scheme + hostname + port) from the full URL
-    try {
-      this.bridgeOrigin = new URL(BASE_URL).origin;
-    } catch (e) {
-      console.error('Invalid BASE_URL for bridge origin:', BASE_URL);
-      // Fallback for safety, though it might not work if BASE_URL is malformed
-      this.bridgeOrigin = BASE_URL;
-    }
-    this.bridgeWindow = null;
-    this.bridgeReady = false;
-    this.pendingRequests = new Map(); // requestId -> { resolve, reject, timer }
-    this.requestCounter = 0;
   }
 
   // Initialize the service
   init() {
     if (this.isInitialized) return;
-    
-    console.log('🔄 Initializing DataSyncService...');
-    
-    // Set up event listeners
+    console.log('🔄 Initializing DataSyncService in music-library...');
     this.setupEventListeners();
-    
-    // Initialize with default data if needed
-    this.initializeDefaultData();
-    
-    // Spin up cross-origin bridge to main-app for true MF sync
-    this.setupBridge();
-    
+    this.initializeDefaultData(); // Initialize with local data first
     this.isInitialized = true;
-    console.log('✅ DataSyncService initialized');
+    console.log('✅ DataSyncService initialized in music-library');
+    // Request fresh data from the main-app
+    console.log('📢 music-library: Requesting songs from main-app...');
+    this.channel.postMessage({ type: 'REQUEST_SONGS' });
   }
 
   // Set up event listeners for cross-microfrontend communication
   setupEventListeners() {
-    // Listen for localStorage changes (cross-tab communication)
+    this.channel.onmessage = (event) => {
+      const { type, payload } = event.data;
+      if (type === 'SYNC_SONGS' || type === 'DATA_READY') {
+        console.log(`📡 music-library: Received ${type} event with`, payload.length, 'songs.');
+        this.setData(payload);
+      }
+    };
+
+    // Listen for localStorage changes to sync across tabs of the same app
     window.addEventListener('storage', this.handleStorageChange.bind(this));
-    
-    // Listen for custom events (same-tab communication)
-    window.addEventListener(this.eventName, this.handleCustomEvent.bind(this));
-    
-    // Listen for visibility changes to sync when tab becomes active
-    document.addEventListener('visibilitychange', this.handleVisibilityChange.bind(this));
-    
-    // Listen for window focus to sync when tab becomes active
-    window.addEventListener('focus', this.handleWindowFocus.bind(this));
-    
-    // Listen for page show event (when tab becomes active)
-    window.addEventListener('pageshow', this.handlePageShow.bind(this));
-    
-    // Add periodic sync for standalone music library
-    this.setupPeriodicSync();
   }
 
-  // Create hidden iframe bridge to main-app to exchange messages
-  setupBridge() {
-    try {
-      // Avoid duplicate iframes
-      const existing = document.getElementById('mf-bridge-5173');
-      if (existing) {
-        this.bridgeWindow = existing.contentWindow;
-      } else {
-        const iframe = document.createElement('iframe');
-        iframe.id = 'mf-bridge-5173';
-        iframe.src = this.bridgeUrl;
-        iframe.style.display = 'none';
-        document.body.appendChild(iframe);
-        this.bridgeWindow = iframe.contentWindow;
-        iframe.addEventListener('load', () => {
-          // Bridge is likely ready shortly after load
-          this.bridgeReady = true;
-          // Request a fresh copy of songs from main-app
-          this.requestSongsFromBridge().catch(() => {});
-        });
-      }
-
-      // Global listener for bridge messages
-      window.addEventListener('message', (event) => {
-        if (event.origin !== this.bridgeOrigin) return;
-        const { type, payload, requestId } = event.data || {};
-        if (type === 'BRIDGE_READY') {
-          this.bridgeReady = true;
-          this.requestSongsFromBridge().catch(() => {});
-          return;
-        }
-        if (requestId && this.pendingRequests.has(requestId)) {
-          const pending = this.pendingRequests.get(requestId);
-          this.pendingRequests.delete(requestId);
-          clearTimeout(pending.timer);
-          if (type === 'RESPONSE_SONGS' || type === 'ACK_UPDATE') {
-            pending.resolve(payload);
-          } else {
-            pending.reject(new Error(`Unexpected bridge response: ${type}`));
-          }
-        }
-
-        if (type === 'RESPONSE_SONGS' && Array.isArray(payload)) {
-          // Update local data and broadcast
-          this.setData(payload);
-        }
-      });
-    } catch (e) {
-      console.warn('⚠️ Bridge setup failed, will rely on localStorage-only sync.', e);
-    }
-  }
-
-  // Helper to send requests to the bridge with timeout
-  postToBridge(message, timeoutMs = 2000) {
-    return new Promise((resolve, reject) => {
-      if (!this.bridgeWindow) return reject(new Error('Bridge window not available'));
-      const requestId = `req_${Date.now()}_${++this.requestCounter}`;
-      const timer = setTimeout(() => {
-        if (this.pendingRequests.has(requestId)) {
-          this.pendingRequests.delete(requestId);
-          reject(new Error('Bridge request timed out'));
-        }
-      }, timeoutMs);
-      this.pendingRequests.set(requestId, { resolve, reject, timer });
-      this.bridgeWindow.postMessage({ ...message, requestId }, this.bridgeOrigin);
-    });
-  }
-
-  async requestSongsFromBridge() {
-    if (!this.bridgeReady || !this.bridgeWindow) return [];
-    try {
-      const res = await this.postToBridge({ type: 'REQUEST_SONGS' });
-      if (Array.isArray(res)) {
-        this.setData(res);
-        return res;
-      }
-      return [];
-    } catch (e) {
-      console.log('ℹ️ Bridge REQUEST_SONGS failed:', e.message);
-      return [];
-    }
-  }
-
-  // Setup periodic sync for standalone music library
-  setupPeriodicSync() {
-    // Sync every 1 second when tab is visible
-    this.syncInterval = setInterval(() => {
-      if (!document.hidden) {
-        // Pull from same-origin storage (in case another 5174 tab wrote)
-        this.syncFromStorage();
-        // Also request fresh data from main-app bridge (authoritative source)
-        this.requestSongsFromBridge().catch(() => {});
-      }
-    }, 1000);
-  }
 
   // Handle localStorage changes from other tabs/windows
   handleStorageChange(event) {
@@ -409,10 +281,8 @@ class DataSyncService {
       // Notify listeners in same tab
       window.dispatchEvent(new CustomEvent(this.eventName, { detail: dataToStore }));
       
-      // Also push update to main-app via bridge (best-effort)
-      if (this.bridgeReady && this.bridgeWindow) {
-        this.postToBridge({ type: 'UPDATE_SONGS', payload: dataToStore }).catch(() => {});
-      }
+      // Broadcast changes to other contexts (like the main-app)
+      this.channel.postMessage({ type: 'SYNC_SONGS', payload: dataToStore });
       
       console.log('💾 Data saved and broadcasted:', dataToStore.length, 'songs');
       return dataToStore;
