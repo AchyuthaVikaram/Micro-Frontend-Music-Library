@@ -6,7 +6,11 @@ This repository contains a micro frontend demo with two Vite + React apps:
 
 ## How to run locally
 
-1) Clone and install
+1) Update constants to use localhost URLs
+- In `main-app/src/utils/constants.js`, set `BASE_URL` (or `VITE_MUSIC_LIBRARY_URL`) to `http://localhost:5174`
+- In `music-library/src/utils/constants.js`, set `BASE_URL` (or `VITE_MAIN_APP_URL`) to `http://localhost:5173`
+
+2) Install dependencies
 ```
 git clone <your-repo-url>
 cd Assignment
@@ -16,7 +20,7 @@ cd music-library && npm install
 cd ../main-app && npm install
 ```
 
-2) Start development servers (start remote first)
+3) Start development servers (start remote first)
 ```
 # Terminal A – Remote (music-library)
 cd music-library
@@ -27,33 +31,40 @@ cd main-app
 npm run dev   # http://localhost:5173
 ```
 
-3) Open the host in your browser
+4) Open the host in your browser
 - Visit http://localhost:5173
 - Log in using the demo credentials below
 
 Notes
-- The host dynamically loads the remote from http://localhost:5174/assets/remoteEntry.js
-- If your setup serves `remoteEntry.js` at the root, update the host `vite.config.js` accordingly.
+- The host dynamically loads the remote from `http://localhost:5174/assets/remoteEntry.js`
+- If your setup serves `remoteEntry.js` at a different path, update the host `main-app/vite.config.js` remote URL accordingly.
 
-## How you deployed it
+## How we deployed it (Netlify)
 
-There are two separate deployments: one for the remote and one for the host.
+There are two separate Netlify sites: one for the remote and one for the host.
 
 Remote (music-library)
-- Build: `npm run build` (outputs to `dist/`)
-- Deploy to Vercel/Netlify with project root set to `music-library`
-- After deploy, copy the public URL to `assets/remoteEntry.js` (e.g. https://your-remote.vercel.app/assets/remoteEntry.js)
+- Project root: `music-library/`
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Environment (optional): set `VITE_MAIN_APP_URL` to the host origin (e.g. `https://mainappmicrofronted.netlify.app`)
+- CORS headers: `music-library/netlify.toml` includes `Access-Control-Allow-Origin: *` for `/assets/*`
 
 Host (main-app)
-- Configure the host with the remote URL via env var:
-  - In `main-app/.env`: `VITE_MUSIC_LIB_REMOTE=https://your-remote.vercel.app/assets/remoteEntry.js`
-- Build: `npm run build` (outputs to `dist/`)
-- Deploy to Vercel/Netlify with project root set to `main-app`
+- Project root: `main-app/`
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Environment: set `VITE_MUSIC_LIBRARY_URL` to the remote origin (e.g. `https://microfrontendmusiclibrary.netlify.app`)
 
 Order of operations for first-time deploys
-1) Deploy `music-library` and get its `remoteEntry.js` URL
-2) Set `VITE_MUSIC_LIB_REMOTE` in `main-app`
+1) Deploy `music-library` and confirm `https://<remote-site>/assets/remoteEntry.js` is accessible
+2) In `main-app` Netlify site settings, set `VITE_MUSIC_LIBRARY_URL=https://<remote-site>` (without trailing slash)
 3) Deploy `main-app`
+
+Optional (SPA 404 fixes)
+- Netlify SPA refresh 404 can be avoided by adding a `_redirects` file or `netlify.toml` with:
+  - `/*    /index.html   200`
+- This repo includes a `netlify.toml` for the remote; you can add a similar one for the host if needed.
 
 ## Credentials for demo
 
@@ -81,4 +92,9 @@ Role-Based Authentication
 - `main-app/src/components/Protected.jsx` guards routes based on `user` and `user.role`.
 - The host forwards `role` to the remote. The remote renders admin controls (add/delete) only when `role === 'admin'`; users see a read-only library with filtering, sorting, and grouping.
 
-That’s it. Start the remote, then the host, and log in with the demo credentials to explore the micro frontend dashboard.
+## Deployed links and caveats
+
+- Host (main-app): https://mainappmicrofronted.netlify.app/
+- Remote (music-library): https://microfrontendmusiclibrary.netlify.app/
+
+Note: The deployed links are currently a bit clumsy and, on refresh, you may see a 404 due to static SPA routing behavior. For the best experience, please run the apps locally using the steps above.

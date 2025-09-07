@@ -1,61 +1,42 @@
 # Music Library – Main App (Container)
 
-A modern React application that serves as the container in a micro frontend architecture. It provides authentication, role-based access control, and integrates the Music Library remote component via Module Federation.
+Minimal instructions to run locally and deploy on Netlify.
 
-## 🚀 Features
+## Run locally
 
-- **JWT Authentication**: Mock JWT-based authentication with role management
-- **Role-Based Access**: Admin and User roles with different permissions
-- **Micro Frontend Integration**: Dynamically loads the Music Library remote component
-- **Modern UI**: Built with Tailwind CSS and Framer Motion animations
-- **Responsive Design**: Fully responsive across all device sizes
-- **Protected Routes**: Route guards based on authentication and roles
+1) Update constants to localhost
+- Edit `main-app/src/utils/constants.js` and set the remote base to `http://localhost:5174` (or set env `VITE_MUSIC_LIBRARY_URL=http://localhost:5174`).
 
-## 🛠️ Tech Stack
+2) Install deps (both apps)
+```bash
+git clone <your-repo-url>
+cd Assignment
+cd music-library && npm install
+cd ../main-app && npm install
+```
 
-- **React 18** - UI library with functional components and hooks
-- **Vite** - Fast build tool and development server
-- **React Router DOM** - Client-side routing
-- **Tailwind CSS** - Utility-first CSS framework
-- **Framer Motion** - Animation library
-- **Module Federation** - Micro frontend architecture
-- **Lucide React** - Modern icon library
+3) Start dev (start remote first)
+```bash
+# Terminal 1 – Remote
+cd music-library && npm run dev   # http://localhost:5174
 
-## 📦 How to Run Locally (Full Setup)
+# Terminal 2 – Host
+cd main-app && npm run dev        # http://localhost:5173
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone <your-repo-url>
-   cd Assignment
-   ```
+4) Open http://localhost:5173 and log in with the demo credentials below.
 
-2. **Install dependencies for BOTH apps**
-   ```bash
-   # Terminal A
-   cd main-app && npm install
-   
-   # Terminal B
-   cd music-library && npm install
-   ```
+## Deploy (Netlify)
 
-3. **Start dev servers (start remote first)**
-   ```bash
-   # Terminal A (Host – main-app)
-   npm run dev    # http://localhost:5173
-   
-   # Terminal B (Remote – music-library)
-   npm run build
-   npm run preview    # http://localhost:5174
+Site settings (project root = `main-app/`):
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Environment: `VITE_MUSIC_LIBRARY_URL=https://microfrontendmusiclibrary.netlify.app` (your remote origin)
 
-   ```
-
-4. **Open the container** at `http://localhost:5173` and log in using demo credentials below.
-
-## 🏃‍♂️ Development Scripts (Main App)
-
-- **Dev:** `npm run dev` → `http://localhost:5173`
-- **Build:** `npm run build` → outputs to `dist/`
-- **Preview:** `npm run preview` (serve the production build locally)
+SPA refresh 404 fix (optional): add `public/_redirects` with:
+```
+/*    /index.html   200
+```
 
 ## 🔐 Demo Credentials & Role-Based Auth
 
@@ -76,34 +57,11 @@ Implementation (high level):
 - Credentials are validated against a small mock database; a mock JWT is stored in `localStorage`.
 - `src/components/Protected.jsx` guards routes based on `user` and `user.role`.
 
-## 🏗️ Project Structure
+## Deployed link and caveat
 
-```
-main-app/
-├── src/
-│   ├── components/          # Reusable UI components
-│   │   ├── AuthForm.jsx     # Login form with preset credentials
-│   │   ├── Navbar.jsx       # Top navigation bar
-│   │   ├── Protected.jsx    # Route protection component
-│   │   └── Sidebar.jsx      # Collapsible sidebar navigation
-│   ├── context/
-│   │   └── AuthContext.jsx  # Authentication context provider
-│   ├── pages/               # Page components
-│   │   ├── Dashboard.jsx    # Main dashboard with music library
-│   │   ├── Home.jsx         # Landing page
-│   │   └── Login.jsx        # Login page
-│   ├── utils/
-│   │   └── authHelpers.js   # JWT utilities and mock authentication
-│   ├── App.jsx              # Main app component with routing
-│   ├── main.jsx             # React entry point
-│   └── index.css            # Global styles and Tailwind imports
-├── public/                  # Static assets
-├── index.html               # HTML template
-├── vite.config.js           # Vite configuration with Module Federation
-├── tailwind.config.js       # Tailwind CSS configuration
-├── postcss.config.js        # PostCSS configuration
-└── package.json             # Dependencies and scripts
-```
+- Host: https://mainappmicrofronted.netlify.app/
+
+Note: On refresh, deep links may 404 due to static SPA routing. Use the `_redirects` tip above, or run locally for the best experience.
 
 ## 🎨 Design System
 
@@ -114,123 +72,11 @@ The app uses a carefully crafted dark theme with a music-inspired color palette:
 - **Dark Theme:** Various shades of dark gray/blue
 - **Typography:** Modern, readable fonts with proper hierarchy
 
-## 🔧 Micro Frontend: Module Federation Configuration
+## Demo credentials
 
-This app is the host that consumes the `music-library` remote.
-
-```javascript
-// vite.config.js
-federation({
-  name: 'mainApp',
-  remotes: {
-    'music-library': process.env.VITE_MUSIC_LIB_REMOTE || 'http://localhost:5174/assets/remoteEntry.js'
-  },
-  shared: ['react', 'react-dom']
-})
-```
-
-How it works end-to-end:
-- `music-library/vite.config.js` exposes `./MusicLibrary` which points to `src/App.jsx`.
-- `main-app/src/pages/Dashboard.jsx` lazy-loads `import('music-library/MusicLibrary')`.
-- Props passed from host to remote:
-  - `songs` from `src/context/SongsContext.jsx`
-  - `role` from `src/context/AuthContext.jsx`
-  - `onAddSong` / `onDeleteSong` callbacks
-- Remote renders UI only; all mutations call back into host via callbacks.
-
-## 🚀 How We Deployed It
-
-### Vercel – Main App (Host)
-
-1. **Push your code to GitHub**
-
-2. **Connect to Vercel:**
-   - Import your repository in Vercel
-   - Set the root directory to `main-app`
-   - Add env var: `VITE_MUSIC_LIB_REMOTE` pointing to your deployed music-library `remoteEntry.js` (e.g., `https://your-remote.vercel.app/assets/remoteEntry.js`)
-
-3. **Deploy:**
-   - Vercel will automatically build and deploy your app
-   - The build command is: `npm run build`
-   - The output directory is: `dist`
-
-### Netlify – Main App (Host)
-
-1. **Build the app:**
-   ```bash
-   npm run build
-   ```
-
-2. **Deploy to Netlify:**
-   - Drag and drop the `dist` folder to Netlify
-   - Or connect your GitHub repository
-   - Set build command: `npm run build`
-   - Set publish directory: `dist`
-
-## 🔗 Integration with Music Library (Code Snippet)
-
-The host lazy-loads the remote and passes data + callbacks:
-
-```jsx
-// Dashboard.jsx - Integration example
-const MusicLibrary = lazy(() => import('music-library/MusicLibrary'));
-
-<Suspense fallback={<LoadingSpinner />}>
-  <MusicLibrary
-    songs={songs}
-    role={role}
-    onAddSong={handleAddSong}
-    onDeleteSong={handleDeleteSong}
-  />
-</Suspense>
-```
-
-## 🧪 Testing the Integration (Local)
-
-1. **Start both applications:**
-   ```bash
-   # Terminal 1 - Main App
-   cd main-app && npm run dev
-
-   # Terminal 2 - Music Library
-   cd music-library && npm run dev
-   ```
-
-2. **Login with test credentials**
-3. **Navigate to Dashboard to see the integrated music library**
-4. **Test role-based features (admin can add/delete, user can only view)**
-
-## 🐛 Troubleshooting
-
-### Module Federation Issues
-- Ensure both apps are running on different ports
-- Check that the remote URL is correct in `main-app/vite.config.js`
-- Verify `music-library/vite.config.js` exposes `./MusicLibrary`
-- If Vite overlay shows “failed to resolve import `music-library/MusicLibrary`”, verify the remote `name` is `music-library` and the host `remotes` key matches.
-
-### Authentication Issues
-- Check `localStorage` for stored JWT tokens
-- Verify the mock user database in `src/utils/authHelpers.js`
-- Ensure proper role checking in `src/components/Protected.jsx`
-
-### Styling Issues
-- Verify Tailwind CSS is properly configured
-- Check that custom CSS classes are defined in index.css
-- Ensure Framer Motion animations are not conflicting
-
-## 📝 License
-
-This project is part of an internship assignment and is for educational purposes.
-
-## 🤝 Contributing
-
-This is an assignment project. For any issues or improvements, please contact the development team.
-
----
-
-**Demo Credentials:**
 - Admin: `admin@test.com` / `admin123`
 - User: `user@test.com` / `user123`
 
-**Live Demo:** [Your deployed main-app URL]
-**Music Library Remote:** [Your deployed music-library URL]
+## Notes
+
+- This host consumes the remote via Module Federation. Ensure the remote URL set in `vite.config.js` or env variables is correct.
