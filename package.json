@@ -1,0 +1,16 @@
+{
+  "name": "micro-frontend-monorepo",
+  "private": true,
+  "workspaces": [
+    "main-app",
+    "music-library"
+  ],
+  "scripts": {
+    "install:all": "npm install --workspaces",
+    "build:all": "npm run build -w main-app && npm run build -w music-library && npm run postbuild",
+    "postbuild": "shx mkdir -p dist/music-library && shx cp -R music-library/dist/* dist/music-library/ && shx cp -R main-app/dist/* dist/"
+  },
+  "devDependencies": {
+    "shx": "^0.3.4"
+  }
+}
